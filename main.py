@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from ui.main_window import MainWindow
-from datebase.db_manager import DatabaseManager
+from database.db_manager import DatabaseManager
 import tkinter as tk
 from tkinter import messagebox
 

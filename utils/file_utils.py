@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 from PIL import Image
 import hashlib
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 
 class FileUtils:
@@ -15,6 +15,108 @@ class FileUtils:
 
     ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
     MAX_IMAGE_SIZE = (800, 800)  # Tamaño máximo para las imágenes
+
+    # Mapa de colores comunes a hexadecimal
+    COLOR_NAME_TO_HEX = {
+        'negro': '#000000',
+        'blanco': '#FFFFFF',
+        'rojo': '#FF0000',
+        'verde': '#00FF00',
+        'azul': '#0000FF',
+        'amarillo': '#FFFF00',
+        'naranja': '#FFA500',
+        'morado': '#800080',
+        'púrpura': '#800080',
+        'rosa': '#FFC0CB',
+        'gris': '#808080',
+        'marrón': '#A52A2A',
+        'café': '#A52A2A',
+        'cyan': '#00FFFF',
+        'cian': '#00FFFF',
+        'magenta': '#FF00FF',
+        'plata': '#C0C0C0',
+        'dorado': '#FFD700',
+        'oro': '#FFD700',
+        'turquesa': '#40E0D0',
+        'violeta': '#EE82EE',
+        'lima': '#32CD32',
+        'navy': '#000080',
+        'azul marino': '#000080',
+        'beige': '#F5F5DC',
+        'crema': '#FFFDD0',
+        'salmon': '#FA8072',
+        'salmón': '#FA8072',
+        'coral': '#FF7F50',
+        'oliva': '#808000',
+        'chocolate': '#D2691E',
+        'índigo': '#4B0082',
+        'lavanda': '#E6E6FA',
+        'menta': '#98FF98',
+        'cielo': '#87CEEB',
+        'arena': '#F4A460',
+        'bronce': '#CD7F32',
+        'cobre': '#B87333',
+        'vino': '#722F37',
+        'carbón': '#36454F',
+        'perla': '#F8F8FF',
+        'marfil': '#FFFFF0',
+        'esmeralda': '#50C878',
+        'rubí': '#E0115F',
+        'zafiro': '#0F52BA'
+    }
+
+    @staticmethod
+    def color_name_to_hex(color_name: str) -> str:
+        """
+        Convertir un nombre de color a hexadecimal
+        Retorna el código hex si encuentra coincidencia, o #808080 (gris) por defecto
+        """
+        if not color_name:
+            return '#808080'
+
+        # Si ya es hexadecimal, devolverlo
+        if color_name.startswith('#') and len(color_name) in [4, 7]:
+            return color_name.upper()
+
+        # Buscar en el mapa de colores
+        color_lower = color_name.lower().strip()
+
+        # Coincidencia exacta
+        if color_lower in FileUtils.COLOR_NAME_TO_HEX:
+            return FileUtils.COLOR_NAME_TO_HEX[color_lower]
+
+        # Coincidencia parcial
+        for key, value in FileUtils.COLOR_NAME_TO_HEX.items():
+            if key in color_lower or color_lower in key:
+                return value
+
+        # Color por defecto
+        return '#808080'
+
+    @staticmethod
+    def hex_to_rgb(hex_color: str) -> Tuple[int, int, int]:
+        """Convertir color hexadecimal a RGB"""
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+
+    @staticmethod
+    def rgb_to_hex(r: int, g: int, b: int) -> str:
+        """Convertir RGB a hexadecimal"""
+        return f"#{r:02x}{g:02x}{b:02x}".upper()
+
+    @staticmethod
+    def get_contrasting_text_color(bg_hex: str) -> str:
+        """
+        Determinar si usar texto negro o blanco basado en el color de fondo
+        Usa el algoritmo de luminancia para determinar el contraste
+        """
+        r, g, b = FileUtils.hex_to_rgb(bg_hex)
+
+        # Calcular luminancia relativa
+        luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+
+        # Si el fondo es oscuro, usar texto blanco; si es claro, usar negro
+        return '#FFFFFF' if luminance < 0.5 else '#000000'
 
     @staticmethod
     def is_valid_image(file_path: str) -> bool:

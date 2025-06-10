@@ -49,7 +49,7 @@ class ProductDetailWindow:
 
         ttk.Label(header_frame, text="📋", font=('Arial', 24)).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Label(header_frame, text=self.producto.nombre,
-                  font=('Arial', 18, 'bold')).pack(side=tk.LEFT)
+                 font=('Arial', 18, 'bold')).pack(side=tk.LEFT)
 
         # Frame principal con dos columnas
         content_frame = ttk.Frame(main_frame)
@@ -64,13 +64,13 @@ class ProductDetailWindow:
         image_frame.pack(fill=tk.X)
 
         self.image_label = ttk.Label(image_frame, text="Sin imagen", relief=tk.SUNKEN,
-                                     anchor='center')
+                                    anchor='center')
         self.image_label.pack()
         self.image_label.configure(padding=50)
 
         # Botón para abrir imagen en tamaño completo
         self.btn_open_image = ttk.Button(image_frame, text="Ver imagen completa",
-                                         command=self.abrir_imagen_completa, state='disabled')
+                                        command=self.abrir_imagen_completa, state='disabled')
         self.btn_open_image.pack(pady=(10, 0))
 
         # Información básica
@@ -81,17 +81,25 @@ class ProductDetailWindow:
         info_data = [
             ('ID:', str(self.producto.id)),
             ('Descripción:', self.producto.descripcion or "Sin descripción"),
-            ('Color:', self.producto.color or "No especificado"),
-            ('Peso:', f"{self.producto.peso} gramos"),
-            ('Material:', self.producto.material)
+            ('Peso Total:', f"{self.producto.get_peso_total()} gramos"),
+            ('Material:', self.producto.material),
+            ('Tiempo Total:', self.producto.get_tiempo_total() // 60 if self.producto.get_tiempo_total() >= 60
+                            else f"{self.producto.get_tiempo_total()} min")
         ]
+
+        # Formatear tiempo total correctamente
+        tiempo_total = self.producto.get_tiempo_total()
+        if tiempo_total >= 60:
+            horas = tiempo_total // 60
+            minutos = tiempo_total % 60
+            info_data[4] = ('Tiempo Total:', f"{horas}h {minutos}min" if minutos > 0 else f"{horas}h")
 
         for label_text, value in info_data:
             frame = ttk.Frame(basic_frame)
             frame.pack(fill=tk.X, pady=3)
 
             ttk.Label(frame, text=label_text, font=('Arial', 10, 'bold'),
-                      width=12).pack(side=tk.LEFT, anchor=tk.W)
+                     width=12).pack(side=tk.LEFT, anchor=tk.W)
             label = ttk.Label(frame, text=value, font=('Arial', 10))
             label.pack(side=tk.LEFT, padx=(5, 0), anchor=tk.W)
             self.info_labels[label_text] = label
@@ -100,9 +108,75 @@ class ProductDetailWindow:
         right_frame = ttk.Frame(content_frame)
         right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        # Especificaciones de color
+        color_frame = ttk.LabelFrame(right_frame, text="🎨 Especificaciones de Color", padding="10")
+        color_frame.pack(fill=tk.X)
+
+        if self.producto.colores_especificaciones:
+            # Crear un canvas con scroll para las especificaciones
+            canvas = tk.Canvas(color_frame, height=150)
+            scrollbar = ttk.Scrollbar(color_frame, orient="vertical", command=canvas.yview)
+            scrollable_frame = ttk.Frame(canvas)
+
+            scrollable_frame.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+
+            canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            # Mostrar cada especificación de color
+            for i, color_spec in enumerate(self.producto.colores_especificaciones):
+                spec_frame = ttk.Frame(scrollable_frame, relief=tk.RIDGE, borderwidth=1)
+                spec_frame.pack(fill=tk.X, padx=5, pady=5)
+
+                # Cabecera con color
+                header_frame = ttk.Frame(spec_frame)
+                header_frame.pack(fill=tk.X, padx=10, pady=5)
+
+                # Muestra de color
+                color_label = tk.Label(header_frame, text="   ", bg=color_spec.color_hex,
+                                     width=3, height=1, relief=tk.SUNKEN)
+                color_label.pack(side=tk.LEFT, padx=(0, 10))
+
+                # Nombre y código
+                ttk.Label(header_frame, text=f"{color_spec.nombre_color or 'Sin nombre'} ({color_spec.color_hex})",
+                         font=('Arial', 10, 'bold')).pack(side=tk.LEFT)
+
+                # Detalles
+                details_frame = ttk.Frame(spec_frame)
+                details_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
+
+                ttk.Label(details_frame, text=f"Peso: {color_spec.peso_color}g",
+                         font=('Arial', 9)).pack(anchor=tk.W)
+
+                if color_spec.tiempo_adicional > 0:
+                    ttk.Label(details_frame, text=f"Tiempo cambio: +{color_spec.tiempo_adicional} min",
+                             font=('Arial', 9)).pack(anchor=tk.W)
+
+                # Piezas
+                if color_spec.piezas:
+                    piezas_text = "Piezas: " + ", ".join(color_spec.piezas[:3])
+                    if len(color_spec.piezas) > 3:
+                        piezas_text += f" (+{len(color_spec.piezas) - 3} más)"
+                    ttk.Label(details_frame, text=piezas_text,
+                             font=('Arial', 9), foreground='#666666').pack(anchor=tk.W)
+
+                # Notas
+                if color_spec.notas:
+                    ttk.Label(details_frame, text=f"Notas: {color_spec.notas[:50]}...",
+                             font=('Arial', 9), foreground='#666666').pack(anchor=tk.W)
+
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+        else:
+            ttk.Label(color_frame, text="No hay especificaciones de color definidas",
+                     font=('Arial', 10), foreground='#666666').pack()
+
         # Configuración de impresión
         config_frame = ttk.LabelFrame(right_frame, text="⚙️ Configuración de Impresión", padding="10")
-        config_frame.pack(fill=tk.X)
+        config_frame.pack(fill=tk.X, pady=(20, 0))
 
         # Crear un frame tipo tabla para la configuración
         config_data = [
@@ -126,7 +200,7 @@ class ProductDetailWindow:
         recomendaciones = self.generar_recomendaciones()
         for rec in recomendaciones:
             ttk.Label(recom_frame, text=f"• {rec}", font=('Arial', 9),
-                      foreground='#666666').pack(anchor=tk.W, padx=(20, 0), pady=1)
+                     foreground='#666666').pack(anchor=tk.W, padx=(20, 0), pady=1)
 
         # Guía de impresión
         guide_frame = ttk.LabelFrame(right_frame, text="📖 Guía de Impresión", padding="10")
@@ -134,7 +208,7 @@ class ProductDetailWindow:
 
         # ScrolledText para mostrar la guía
         self.guide_text = scrolledtext.ScrolledText(guide_frame, wrap=tk.WORD,
-                                                    height=12, font=('Arial', 10))
+                                                   height=12, font=('Arial', 10))
         self.guide_text.pack(fill=tk.BOTH, expand=True)
 
         # Hacer el texto de solo lectura
@@ -146,24 +220,24 @@ class ProductDetailWindow:
 
         if self.producto.fecha_creacion:
             ttk.Label(dates_frame, text=f"Creado: {self.producto.fecha_creacion.strftime('%d/%m/%Y %H:%M')}",
-                      font=('Arial', 9), foreground='#666666').pack(side=tk.LEFT, padx=5)
+                     font=('Arial', 9), foreground='#666666').pack(side=tk.LEFT, padx=5)
 
         if self.producto.fecha_modificacion:
             ttk.Label(dates_frame, text=f"Modificado: {self.producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M')}",
-                      font=('Arial', 9), foreground='#666666').pack(side=tk.LEFT, padx=5)
+                     font=('Arial', 9), foreground='#666666').pack(side=tk.LEFT, padx=5)
 
         # Frame de botones
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(20, 0))
 
         ttk.Button(button_frame, text="📑 Copiar Guía",
-                   command=self.copiar_guia).pack(side=tk.LEFT, padx=5)
+                  command=self.copiar_guia).pack(side=tk.LEFT, padx=5)
 
         ttk.Button(button_frame, text="🖨️ Imprimir Detalles",
-                   command=self.imprimir_detalles).pack(side=tk.LEFT)
+                  command=self.imprimir_detalles).pack(side=tk.LEFT)
 
         ttk.Button(button_frame, text="Cerrar",
-                   command=self.window.destroy).pack(side=tk.RIGHT)
+                  command=self.window.destroy).pack(side=tk.RIGHT)
 
     def cargar_datos(self):
         """Cargar datos del producto en la ventana"""
@@ -305,7 +379,7 @@ class ProductDetailWindow:
 </head>
 <body>
     <h1>🖨️ {self.producto.nombre}</h1>
-
+    
     <div class="info-section">
         <h2>Información Básica</h2>
         <div class="info-row"><span class="label">ID:</span> {self.producto.id}</div>
@@ -314,19 +388,19 @@ class ProductDetailWindow:
         <div class="info-row"><span class="label">Peso:</span> {self.producto.peso} gramos</div>
         <div class="info-row"><span class="label">Material:</span> {self.producto.material}</div>
     </div>
-
+    
     <div class="info-section">
         <h2>Configuración de Impresión</h2>
         <div class="info-row"><span class="label">Tiempo estimado:</span> {self.producto.tiempo_impresion_formato()}</div>
         <div class="info-row"><span class="label">Temperatura Extrusor:</span> {self.producto.temperatura_extrusor}°C</div>
         <div class="info-row"><span class="label">Temperatura Cama:</span> {self.producto.temperatura_cama}°C</div>
     </div>
-
+    
     <div class="info-section">
         <h2>Guía de Impresión</h2>
         <div class="guide">{self.producto.guia_impresion or 'No hay guía disponible'}</div>
     </div>
-
+    
     <div class="info-section">
         <p><small>
             Creado: {self.producto.fecha_creacion.strftime('%d/%m/%Y %H:%M') if self.producto.fecha_creacion else 'N/A'}<br>
@@ -346,8 +420,8 @@ class ProductDetailWindow:
             webbrowser.open(str(temp_path.absolute()))
 
             messagebox.showinfo("Imprimir",
-                                "Se abrió el documento en su navegador.\n"
-                                "Use Ctrl+P (o Cmd+P en Mac) para imprimir.")
+                              "Se abrió el documento en su navegador.\n"
+                              "Use Ctrl+P (o Cmd+P en Mac) para imprimir.")
 
         except Exception as e:
             messagebox.showerror("Error", f"Error al generar documento: {str(e)}")

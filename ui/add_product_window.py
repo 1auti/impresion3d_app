@@ -8,8 +8,9 @@ from tkinter import scrolledtext
 import os
 from PIL import Image, ImageTk
 
-from datebase.db_manager import DatabaseManager
-from models.producto import Producto
+from database.db_manager import DatabaseManager
+from models.producto import Producto, ColorEspecificacion
+from ui.color_widgets import ColorSpecificationWidget
 from utils.file_utils import FileUtils
 
 
@@ -21,6 +22,7 @@ class AddProductWindow:
         self.db_manager = db_manager
         self.producto_creado = False
         self.imagen_path = None
+        self.color_specifications = []  # Lista de especificaciones de color
 
         # Crear ventana
         self.window = tk.Toplevel(parent)
@@ -47,7 +49,6 @@ class AddProductWindow:
             'nombre': tk.StringVar(),
             'descripcion': tk.StringVar(),
             'peso': tk.DoubleVar(value=0.0),
-            'color': tk.StringVar(),
             'tiempo_impresion': tk.IntVar(value=0),
             'material': tk.StringVar(value="PLA"),
             'temperatura_extrusor': tk.IntVar(value=200),
@@ -64,7 +65,7 @@ class AddProductWindow:
 
         # Título
         title_label = ttk.Label(main_frame, text="➕ Agregar Nuevo Producto",
-                                font=('Arial', 16, 'bold'))
+                               font=('Arial', 16, 'bold'))
         title_label.pack(pady=(0, 20))
 
         # Notebook para organizar campos
@@ -79,10 +80,9 @@ class AddProductWindow:
         fields_basic = [
             ('nombre', 'Nombre del Producto:', 'entry'),
             ('descripcion', 'Descripción:', 'entry'),
-            ('color', 'Color:', 'entry'),
             ('material', 'Material:', 'combobox'),
-            ('peso', 'Peso (gramos):', 'spinbox'),
-            ('tiempo_impresion', 'Tiempo de Impresión (minutos):', 'spinbox')
+            ('peso', 'Peso total estimado (gramos):', 'spinbox'),
+            ('tiempo_impresion', 'Tiempo de Impresión base (minutos):', 'spinbox')
         ]
 
         row = 0
@@ -93,14 +93,14 @@ class AddProductWindow:
                 widget = ttk.Entry(tab_basic, textvariable=self.vars[field_name], width=40)
             elif widget_type == 'combobox' and field_name == 'material':
                 widget = ttk.Combobox(tab_basic, textvariable=self.vars[field_name], width=37,
-                                      values=['PLA', 'ABS', 'PETG', 'TPU', 'Nylon', 'Resina'])
+                                     values=['PLA', 'ABS', 'PETG', 'TPU', 'Nylon', 'Resina'])
             elif widget_type == 'spinbox':
                 if field_name == 'peso':
                     widget = ttk.Spinbox(tab_basic, textvariable=self.vars[field_name],
-                                         from_=0, to=10000, increment=0.1, width=38)
+                                        from_=0, to=10000, increment=0.1, width=38)
                 else:
                     widget = ttk.Spinbox(tab_basic, textvariable=self.vars[field_name],
-                                         from_=0, to=10000, increment=1, width=38)
+                                        from_=0, to=10000, increment=1, width=38)
 
             widget.grid(row=row, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
             self.entries[field_name] = widget
@@ -111,7 +111,7 @@ class AddProductWindow:
         image_frame.grid(row=row, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10, padx=5)
 
         self.image_label = ttk.Label(image_frame, text="Sin imagen", relief=tk.SUNKEN,
-                                     anchor='center')
+                                    anchor='center')
         self.image_label.pack(side=tk.LEFT, padx=(0, 10))
         self.image_label.configure(width=20, padding=40)
 
@@ -119,12 +119,48 @@ class AddProductWindow:
         btn_frame.pack(side=tk.LEFT, fill=tk.Y)
 
         ttk.Button(btn_frame, text="Seleccionar Imagen",
-                   command=self.seleccionar_imagen).pack(pady=5)
+                  command=self.seleccionar_imagen).pack(pady=5)
         ttk.Button(btn_frame, text="Quitar Imagen",
-                   command=self.quitar_imagen).pack()
+                  command=self.quitar_imagen).pack()
 
         self.image_info = ttk.Label(btn_frame, text="", font=('Arial', 9))
         self.image_info.pack(pady=(10, 0))
+
+        # Pestaña de especificaciones de color
+        tab_colors = ttk.Frame(notebook, padding="10")
+        notebook.add(tab_colors, text="Especificaciones de Color")
+
+        # Frame con scroll para especificaciones de color
+        canvas = tk.Canvas(tab_colors)
+        scrollbar = ttk.Scrollbar(tab_colors, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Frame para los widgets de color
+        self.colors_frame = ttk.Frame(scrollable_frame)
+        self.colors_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Botón para agregar color
+        add_color_btn = ttk.Button(
+            scrollable_frame,
+            text="➕ Agregar Color",
+            command=self.agregar_especificacion_color
+        )
+        add_color_btn.pack(pady=10)
+
+        # Empaquetar canvas y scrollbar
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Agregar al menos una especificación de color por defecto
+        self.agregar_especificacion_color()
 
         # Pestaña de configuración de impresión
         tab_config = ttk.Frame(notebook, padding="10")
@@ -141,7 +177,7 @@ class AddProductWindow:
             ttk.Label(tab_config, text=label_text).grid(row=row, column=0, sticky=tk.W, pady=5, padx=5)
 
             widget = ttk.Spinbox(tab_config, textvariable=self.vars[field_name],
-                                 from_=0, to=300, increment=5, width=20)
+                                from_=0, to=300, increment=5, width=20)
             widget.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
             self.entries[field_name] = widget
             row += 1
@@ -155,7 +191,7 @@ class AddProductWindow:
 
         # Sugerencias de guía
         sugerencias_frame = ttk.LabelFrame(tab_config, text="Sugerencias para la guía", padding="5")
-        sugerencias_frame.grid(row=row + 1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10, padx=5)
+        sugerencias_frame.grid(row=row+1, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=10, padx=5)
 
         sugerencias_text = """• Configuración del slicer (altura de capa, relleno, velocidad)
 • Preparación de la superficie de impresión
@@ -165,16 +201,16 @@ class AddProductWindow:
 • Problemas comunes y soluciones"""
 
         ttk.Label(sugerencias_frame, text=sugerencias_text, font=('Arial', 9),
-                  foreground='gray').pack()
+                 foreground='gray').pack()
 
         # Frame de botones
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(20, 0))
 
         ttk.Button(button_frame, text="💾 Guardar",
-                   command=self.guardar_producto).pack(side=tk.RIGHT, padx=5)
+                  command=self.guardar_producto).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="❌ Cancelar",
-                   command=self.window.destroy).pack(side=tk.RIGHT)
+                  command=self.window.destroy).pack(side=tk.RIGHT)
 
     def seleccionar_imagen(self):
         """Seleccionar imagen para el producto"""
@@ -249,18 +285,60 @@ class AddProductWindow:
 
         return True
 
+    def agregar_especificacion_color(self):
+        """Agregar un nuevo widget de especificación de color"""
+        index = len(self.color_specifications)
+
+        color_widget = ColorSpecificationWidget(
+            self.colors_frame,
+            index=index,
+            on_delete=self.eliminar_especificacion_color
+        )
+        color_widget.pack(fill=tk.X, pady=5)
+
+        self.color_specifications.append(color_widget)
+
+    def eliminar_especificacion_color(self, index):
+        """Eliminar una especificación de color"""
+        if len(self.color_specifications) > 1:  # Mantener al menos una
+            widget = self.color_specifications[index]
+            widget.destroy()
+            del self.color_specifications[index]
+
+            # Reindexar los widgets restantes
+            for i, widget in enumerate(self.color_specifications):
+                widget.index = i
+                widget.configure(text=f"Color {i + 1}")
+        else:
+            messagebox.showwarning("Advertencia", "Debe mantener al menos una especificación de color")
+
     def guardar_producto(self):
         """Guardar el nuevo producto"""
         if not self.validar_campos():
             return
 
         try:
+            # Obtener especificaciones de color
+            color_specs = []
+            peso_total = 0.0
+
+            for widget in self.color_specifications:
+                spec = widget.get_specification()
+                if spec.peso_color > 0:  # Solo agregar si tiene peso
+                    color_specs.append(spec)
+                    peso_total += spec.peso_color
+
+            if not color_specs:
+                messagebox.showerror("Error", "Debe agregar al menos un color con peso mayor a 0")
+                return
+
             # Crear objeto producto
             producto = Producto(
                 nombre=self.vars['nombre'].get().strip(),
                 descripcion=self.vars['descripcion'].get().strip(),
-                peso=self.vars['peso'].get(),
-                color=self.vars['color'].get().strip(),
+                peso=peso_total,  # Peso total calculado
+                color="",  # Campo legacy, vacío
+                colores_especificaciones=color_specs,
                 tiempo_impresion=self.vars['tiempo_impresion'].get(),
                 material=self.vars['material'].get(),
                 temperatura_extrusor=self.vars['temperatura_extrusor'].get(),
@@ -275,7 +353,7 @@ class AddProductWindow:
                     producto.imagen_path = saved_path
                 else:
                     if not messagebox.askyesno("Advertencia",
-                                               "No se pudo guardar la imagen. ¿Desea continuar sin imagen?"):
+                                             "No se pudo guardar la imagen. ¿Desea continuar sin imagen?"):
                         return
 
             # Guardar en base de datos

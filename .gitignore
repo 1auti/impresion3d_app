@@ -77,10 +77,16 @@ Thumbs.db
 # Application specific
 data/*.db
 data/*.db-journal
+data/*.db-wal
+data/*.db-shm
 assets/images/*
 !assets/images/.gitkeep
 temp_print.html
 *.log
+
+# Migration and test files
+migration_backup_*.db
+test_*.db
 
 # Backup files
 *.bak

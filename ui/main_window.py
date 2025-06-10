@@ -9,11 +9,12 @@ import os
 from typing import List, Optional
 from PIL import Image, ImageTk
 
-from datebase.db_manager import DatabaseManager
+from database.db_manager import DatabaseManager
 from models.producto import Producto
 from ui.add_product_window import AddProductWindow
 from ui.edit_product_window import EditProductWindow
 from ui.product_detail_window import ProductDetailWindow
+from ui.color_widgets import ColorFilterWidget
 from utils.file_utils import FileUtils
 
 
@@ -34,6 +35,7 @@ class MainWindow:
         # Variables
         self.productos_actuales: List[Producto] = []
         self.producto_seleccionado: Optional[Producto] = None
+        self.colores_filtrados: List[str] = []  # Colores seleccionados para filtrar
 
         # Crear interfaz
         self.create_widgets()
@@ -87,7 +89,7 @@ class MainWindow:
 
         # Título
         title_label = ttk.Label(main_frame, text="🖨️ Gestión de Productos para Impresión 3D",
-                                style='Title.TLabel')
+                               style='Title.TLabel')
         title_label.grid(row=0, column=0, columnspan=3, pady=(0, 20))
 
         # Frame de búsqueda y botones
@@ -105,30 +107,37 @@ class MainWindow:
         ttk.Label(control_frame, text="Acciones:", style='Heading.TLabel').pack(anchor=tk.W, pady=(10, 5))
 
         ttk.Button(control_frame, text="➕ Nuevo Producto",
-                   command=self.nuevo_producto, style='Primary.TButton').pack(fill=tk.X, pady=2)
+                  command=self.nuevo_producto, style='Primary.TButton').pack(fill=tk.X, pady=2)
 
         self.btn_editar = ttk.Button(control_frame, text="✏️ Editar Producto",
                                      command=self.editar_producto, state='disabled')
         self.btn_editar.pack(fill=tk.X, pady=2)
 
         self.btn_ver = ttk.Button(control_frame, text="👁️ Ver Detalles",
-                                  command=self.ver_detalles, state='disabled')
+                                 command=self.ver_detalles, state='disabled')
         self.btn_ver.pack(fill=tk.X, pady=2)
 
         self.btn_eliminar = ttk.Button(control_frame, text="🗑️ Eliminar",
-                                       command=self.eliminar_producto,
-                                       state='disabled', style='Danger.TButton')
+                                      command=self.eliminar_producto,
+                                      state='disabled', style='Danger.TButton')
         self.btn_eliminar.pack(fill=tk.X, pady=2)
+
+        # Separador
+        ttk.Separator(control_frame, orient='horizontal').pack(fill=tk.X, pady=10)
+
+        # Filtro de colores
+        self.color_filter = None
+        self.actualizar_filtro_colores()
 
         # Separador
         ttk.Separator(control_frame, orient='horizontal').pack(fill=tk.X, pady=10)
 
         # Botones adicionales
         ttk.Button(control_frame, text="📊 Estadísticas",
-                   command=self.mostrar_estadisticas).pack(fill=tk.X, pady=2)
+                  command=self.mostrar_estadisticas).pack(fill=tk.X, pady=2)
 
         ttk.Button(control_frame, text="💾 Exportar Datos",
-                   command=self.exportar_datos).pack(fill=tk.X, pady=2)
+                  command=self.exportar_datos).pack(fill=tk.X, pady=2)
 
         # Frame de lista de productos
         list_frame = ttk.Frame(main_frame)
@@ -138,14 +147,14 @@ class MainWindow:
         ttk.Label(list_frame, text="Lista de Productos", style='Heading.TLabel').pack(anchor=tk.W)
 
         # Treeview para lista de productos
-        columns = ('ID', 'Nombre', 'Color', 'Material', 'Tiempo', 'Peso')
+        columns = ('ID', 'Nombre', 'Colores', 'Material', 'Tiempo', 'Peso')
         self.tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=20)
 
         # Configurar columnas
         self.tree.column('#0', width=0, stretch=False)  # Columna oculta
         self.tree.column('ID', width=50, anchor='center')
         self.tree.column('Nombre', width=250)
-        self.tree.column('Color', width=100)
+        self.tree.column('Colores', width=150)
         self.tree.column('Material', width=80, anchor='center')
         self.tree.column('Tiempo', width=100, anchor='center')
         self.tree.column('Peso', width=80, anchor='center')
@@ -153,7 +162,7 @@ class MainWindow:
         # Encabezados
         self.tree.heading('ID', text='ID')
         self.tree.heading('Nombre', text='Nombre del Producto')
-        self.tree.heading('Color', text='Color')
+        self.tree.heading('Colores', text='Colores')
         self.tree.heading('Material', text='Material')
         self.tree.heading('Tiempo', text='Tiempo')
         self.tree.heading('Peso', text='Peso (g)')
@@ -178,7 +187,7 @@ class MainWindow:
 
         # Imagen de vista previa
         self.preview_label = ttk.Label(preview_frame, text="Sin imagen",
-                                       relief=tk.SUNKEN, anchor='center')
+                                      relief=tk.SUNKEN, anchor='center')
         self.preview_label.pack(fill=tk.BOTH, expand=True)
 
         # Información de vista previa
@@ -186,7 +195,7 @@ class MainWindow:
         self.info_frame.pack(fill=tk.X, pady=(10, 0))
 
         self.info_labels = {}
-        info_fields = ['Nombre:', 'Material:', 'Tiempo:', 'Temperatura:']
+        info_fields = ['Nombre:', 'Material:', 'Tiempo:', 'Colores:']
         for field in info_fields:
             frame = ttk.Frame(self.info_frame)
             frame.pack(fill=tk.X, pady=2)
@@ -194,6 +203,10 @@ class MainWindow:
             label = ttk.Label(frame, text="-", font=('Arial', 9))
             label.pack(side=tk.LEFT, padx=(5, 0))
             self.info_labels[field] = label
+
+        # Frame para mostrar muestras de colores
+        self.colors_preview_frame = ttk.Frame(self.info_frame)
+        self.colors_preview_frame.pack(fill=tk.X, pady=(5, 0))
 
         # Barra de estado
         self.status_bar = ttk.Label(self.root, text="Listo", relief=tk.SUNKEN)
@@ -204,6 +217,7 @@ class MainWindow:
         try:
             self.productos_actuales = self.db_manager.obtener_todos_productos()
             self.actualizar_lista()
+            self.actualizar_filtro_colores()  # Actualizar filtro de colores
             self.actualizar_estado(f"Se cargaron {len(self.productos_actuales)} productos")
         except Exception as e:
             messagebox.showerror("Error", f"Error al cargar productos: {str(e)}")
@@ -214,17 +228,47 @@ class MainWindow:
         for item in self.tree.get_children():
             self.tree.delete(item)
 
+        # Filtrar productos si hay colores seleccionados
+        productos_mostrar = self.productos_actuales
+
+        if self.colores_filtrados:
+            productos_mostrar = [
+                p for p in self.productos_actuales
+                if any(c.color_hex in self.colores_filtrados for c in p.colores_especificaciones)
+            ]
+
         # Agregar productos
-        for producto in self.productos_actuales:
+        for producto in productos_mostrar:
+            # Obtener representación de colores
+            if producto.colores_especificaciones:
+                colores_str = ", ".join([
+                    f"{c.nombre_color or c.color_hex}"
+                    for c in producto.colores_especificaciones[:3]  # Mostrar máximo 3
+                ])
+                if len(producto.colores_especificaciones) > 3:
+                    colores_str += f" (+{len(producto.colores_especificaciones) - 3})"
+            else:
+                colores_str = producto.color or "Sin color"
+
             valores = (
                 producto.id,
                 producto.nombre,
-                producto.color,
+                colores_str,
                 producto.material,
                 producto.tiempo_impresion_formato(),
-                f"{producto.peso}g"
+                f"{producto.get_peso_total()}g"
             )
-            self.tree.insert('', 'end', values=valores)
+
+            # Insertar con etiquetas para colores (para futura funcionalidad de color en filas)
+            item = self.tree.insert('', 'end', values=valores)
+
+            # Agregar tag de color si tiene un color predominante
+            if producto.colores_especificaciones:
+                color_principal = producto.get_color_principal()
+                if color_principal:
+                    self.tree.item(item, tags=(color_principal.color_hex,))
+
+        self.actualizar_estado(f"Mostrando {len(productos_mostrar)} productos")
 
     def buscar_productos(self):
         """Buscar productos según el término de búsqueda"""
@@ -282,9 +326,55 @@ class MainWindow:
         self.info_labels['Nombre:'].configure(text=self.producto_seleccionado.nombre[:30])
         self.info_labels['Material:'].configure(text=self.producto_seleccionado.material)
         self.info_labels['Tiempo:'].configure(text=self.producto_seleccionado.tiempo_impresion_formato())
-        self.info_labels['Temperatura:'].configure(
-            text=f"{self.producto_seleccionado.temperatura_extrusor}°C / {self.producto_seleccionado.temperatura_cama}°C"
-        )
+
+        # Actualizar información de colores
+        num_colores = len(self.producto_seleccionado.colores_especificaciones)
+        self.info_labels['Colores:'].configure(text=f"{num_colores} color(es)")
+
+        # Limpiar muestras de colores anteriores
+        for widget in self.colors_preview_frame.winfo_children():
+            widget.destroy()
+
+        # Mostrar muestras de colores (máximo 5)
+        if self.producto_seleccionado.colores_especificaciones:
+            ttk.Label(self.colors_preview_frame, text="Muestras:",
+                     font=('Arial', 8)).pack(side=tk.LEFT, padx=(0, 5))
+
+            for i, color_spec in enumerate(self.producto_seleccionado.colores_especificaciones[:5]):
+                color_frame = tk.Frame(self.colors_preview_frame)
+                color_frame.pack(side=tk.LEFT, padx=2)
+
+                # Muestra de color
+                color_label = tk.Label(color_frame, text="", bg=color_spec.color_hex,
+                                     width=2, height=1, relief=tk.RAISED)
+                color_label.pack()
+
+                # Tooltip con nombre del color
+                self._create_tooltip(color_label,
+                                   f"{color_spec.nombre_color or color_spec.color_hex}\n{color_spec.peso_color}g")
+
+            if num_colores > 5:
+                ttk.Label(self.colors_preview_frame, text=f"+{num_colores-5}",
+                         font=('Arial', 8)).pack(side=tk.LEFT, padx=2)
+
+    def _create_tooltip(self, widget, text):
+        """Crear un tooltip simple para un widget"""
+        def on_enter(event):
+            tooltip = tk.Toplevel()
+            tooltip.wm_overrideredirect(True)
+            tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
+            label = tk.Label(tooltip, text=text, background="#ffffe0",
+                           relief=tk.SOLID, borderwidth=1, font=('Arial', 8))
+            label.pack()
+            widget.tooltip = tooltip
+
+        def on_leave(event):
+            if hasattr(widget, 'tooltip'):
+                widget.tooltip.destroy()
+                del widget.tooltip
+
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
 
     def limpiar_vista_previa(self):
         """Limpiar la vista previa"""
@@ -293,6 +383,10 @@ class MainWindow:
 
         for label in self.info_labels.values():
             label.configure(text="-")
+
+        # Limpiar muestras de colores
+        for widget in self.colors_preview_frame.winfo_children():
+            widget.destroy()
 
     def habilitar_botones(self, habilitar: bool):
         """Habilitar o deshabilitar botones de acción"""
@@ -365,7 +459,7 @@ class MainWindow:
             # Crear ventana de estadísticas
             stats_window = tk.Toplevel(self.root)
             stats_window.title("Estadísticas")
-            stats_window.geometry("400x300")
+            stats_window.geometry("450x400")
             stats_window.transient(self.root)
             stats_window.grab_set()
 
@@ -375,26 +469,33 @@ class MainWindow:
 
             # Título
             ttk.Label(frame, text="📊 Estadísticas de Productos",
-                      style='Title.TLabel').pack(pady=(0, 20))
+                     style='Title.TLabel').pack(pady=(0, 20))
 
-            # Estadísticas
+            # Estadísticas generales
             ttk.Label(frame, text=f"Total de productos: {stats['total_productos']}",
-                      font=('Arial', 11)).pack(anchor=tk.W, pady=5)
+                     font=('Arial', 11)).pack(anchor=tk.W, pady=5)
 
             ttk.Label(frame, text=f"Tiempo promedio de impresión: {stats['tiempo_promedio_impresion']:.0f} minutos",
-                      font=('Arial', 11)).pack(anchor=tk.W, pady=5)
+                     font=('Arial', 11)).pack(anchor=tk.W, pady=5)
+
+            # Estadísticas de colores
+            ttk.Label(frame, text=f"Total de colores únicos: {stats['total_colores']}",
+                     font=('Arial', 11)).pack(anchor=tk.W, pady=5)
+
+            ttk.Label(frame, text=f"Promedio de colores por producto: {stats['promedio_colores_por_producto']}",
+                     font=('Arial', 11)).pack(anchor=tk.W, pady=5)
 
             # Productos por material
             ttk.Label(frame, text="Productos por material:",
-                      font=('Arial', 11, 'bold')).pack(anchor=tk.W, pady=(15, 5))
+                     font=('Arial', 11, 'bold')).pack(anchor=tk.W, pady=(15, 5))
 
             for material, cantidad in stats['productos_por_material'].items():
                 ttk.Label(frame, text=f"  • {material}: {cantidad} productos",
-                          font=('Arial', 10)).pack(anchor=tk.W, pady=2)
+                         font=('Arial', 10)).pack(anchor=tk.W, pady=2)
 
             # Botón cerrar
             ttk.Button(frame, text="Cerrar",
-                       command=stats_window.destroy).pack(pady=(20, 0))
+                      command=stats_window.destroy).pack(pady=(20, 0))
 
             # Centrar ventana
             stats_window.update_idletasks()
@@ -439,6 +540,50 @@ class MainWindow:
     def actualizar_estado(self, mensaje: str):
         """Actualizar barra de estado"""
         self.status_bar.configure(text=mensaje)
+
+    def actualizar_filtro_colores(self):
+        """Actualizar el widget de filtro de colores"""
+        # Obtener colores disponibles
+        colores = self.db_manager.obtener_colores_disponibles()
+
+        if colores:
+            # Eliminar filtro anterior si existe
+            if hasattr(self, 'color_filter') and self.color_filter:
+                self.color_filter.destroy()
+
+            # Buscar el control_frame correcto
+            # El control_frame es donde están los botones y la búsqueda
+            # Necesitamos encontrar el segundo separador y poner el filtro después
+            control_frame = None
+            for widget in self.root.winfo_children():
+                if isinstance(widget, ttk.Frame):
+                    for child in widget.winfo_children():
+                        if isinstance(child, ttk.Frame):
+                            # Verificar si este frame tiene el search_var
+                            for subchild in child.winfo_children():
+                                if isinstance(subchild, ttk.Entry) and hasattr(self, 'search_var'):
+                                    if subchild.cget('textvariable') == str(self.search_var):
+                                        control_frame = child
+                                        break
+
+            if control_frame:
+                # Crear el filtro de colores
+                self.color_filter = ColorFilterWidget(
+                    control_frame,
+                    colores,
+                    on_filter_change=self.aplicar_filtro_color
+                )
+
+                # Encontrar la posición correcta (después del primer separador)
+                separators = [w for w in control_frame.winfo_children() if isinstance(w, ttk.Separator)]
+                if separators:
+                    # Colocar después del primer separador
+                    self.color_filter.pack(after=separators[0], fill=tk.X, pady=10)
+
+    def aplicar_filtro_color(self, colores_seleccionados):
+        """Aplicar filtro de colores a la lista"""
+        self.colores_filtrados = colores_seleccionados
+        self.actualizar_lista()
 
     def on_closing(self):
         """Manejar cierre de la aplicación"""

@@ -120,19 +120,37 @@ def create_sample_data():
     if response == 's':
         print("\n📝 Creando productos de ejemplo...")
         try:
-            from datebase.db_manager import DatabaseManager
-            from models.producto import Producto
+            from database.db_manager import DatabaseManager
+            from models.producto import Producto, ColorEspecificacion
 
             db = DatabaseManager()
             db.init_database()
 
-            # Productos de ejemplo
+            # Productos de ejemplo con especificaciones de color
             productos_ejemplo = [
                 Producto(
                     nombre="Soporte para Smartphone",
                     descripcion="Soporte universal ajustable para teléfonos",
                     peso=45.5,
-                    color="Negro",
+                    color="",  # Campo legacy vacío
+                    colores_especificaciones=[
+                        ColorEspecificacion(
+                            color_hex="#000000",
+                            nombre_color="Negro",
+                            peso_color=30.0,
+                            tiempo_adicional=0,
+                            piezas=["Base", "Brazo ajustable", "Soporte trasero"],
+                            notas="Color principal del producto"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#FF0000",
+                            nombre_color="Rojo",
+                            peso_color=15.5,
+                            tiempo_adicional=5,
+                            piezas=["Acentos", "Botones de ajuste"],
+                            notas="Detalles decorativos"
+                        )
+                    ],
                     tiempo_impresion=180,
                     material="PLA",
                     temperatura_extrusor=210,
@@ -146,13 +164,40 @@ def create_sample_data():
 
 Consejos:
 - Imprimir con la base plana hacia abajo
+- Cambio de color en capa 45 para los acentos rojos
 - Verificar primera capa para buena adhesión"""
                 ),
                 Producto(
-                    nombre="Organizador de Escritorio",
-                    descripcion="Organizador modular con compartimentos",
+                    nombre="Organizador de Escritorio Modular",
+                    descripcion="Organizador con compartimentos personalizables",
                     peso=120.0,
-                    color="Azul",
+                    color="",
+                    colores_especificaciones=[
+                        ColorEspecificacion(
+                            color_hex="#0066CC",
+                            nombre_color="Azul",
+                            peso_color=80.0,
+                            tiempo_adicional=0,
+                            piezas=["Compartimento principal", "Divisores", "Base"],
+                            notas="Estructura principal"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#FFFFFF",
+                            nombre_color="Blanco",
+                            peso_color=25.0,
+                            tiempo_adicional=10,
+                            piezas=["Etiquetas", "Separadores pequeños"],
+                            notas="Elementos de organización"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#00FF00",
+                            nombre_color="Verde",
+                            peso_color=15.0,
+                            tiempo_adicional=5,
+                            piezas=["Clips", "Soportes para bolígrafos"],
+                            notas="Acentos funcionales"
+                        )
+                    ],
                     tiempo_impresion=420,
                     material="PETG",
                     temperatura_extrusor=240,
@@ -161,21 +206,58 @@ Consejos:
 - Altura de capa: 0.3mm
 - Relleno: 15%
 - Velocidad: 40mm/s
-- Primera capa lenta a 20mm/s"""
+- Primera capa lenta a 20mm/s
+- Cambios de color programados en capas específicas"""
                 ),
                 Producto(
-                    nombre="Llavero Personalizado",
-                    descripcion="Llavero con diseño personalizable",
-                    peso=8.5,
-                    color="Rojo",
-                    tiempo_impresion=45,
+                    nombre="Robot Articulado (Educativo)",
+                    descripcion="Robot de juguete con piezas móviles para educación STEM",
+                    peso=85.0,
+                    color="",
+                    colores_especificaciones=[
+                        ColorEspecificacion(
+                            color_hex="#808080",
+                            nombre_color="Gris",
+                            peso_color=40.0,
+                            tiempo_adicional=0,
+                            piezas=["Cuerpo", "Base", "Articulaciones principales"],
+                            notas="Estructura robótica"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#FFA500",
+                            nombre_color="Naranja",
+                            peso_color=20.0,
+                            tiempo_adicional=8,
+                            piezas=["Cabeza", "Manos"],
+                            notas="Partes visibles del robot"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#000000",
+                            nombre_color="Negro",
+                            peso_color=15.0,
+                            tiempo_adicional=5,
+                            piezas=["Ojos", "Detalles de articulaciones"],
+                            notas="Detalles y acentos"
+                        ),
+                        ColorEspecificacion(
+                            color_hex="#FFFF00",
+                            nombre_color="Amarillo",
+                            peso_color=10.0,
+                            tiempo_adicional=5,
+                            piezas=["Botones", "Luces LED simuladas"],
+                            notas="Elementos decorativos"
+                        )
+                    ],
+                    tiempo_impresion=360,
                     material="PLA",
-                    temperatura_extrusor=200,
-                    temperatura_cama=50,
-                    guia_impresion="""Impresión rápida:
+                    temperatura_extrusor=205,
+                    temperatura_cama=55,
+                    guia_impresion="""Impresión por partes:
+- Imprimir cada color por separado para mejor calidad
 - Altura de capa: 0.15mm para mejor detalle
-- Relleno: 100% para mayor resistencia
-- Sin soportes necesarios"""
+- Relleno: 25% para resistencia
+- Soportes necesarios para brazos
+- Ensamblar después de imprimir todas las piezas"""
                 )
             ]
 
