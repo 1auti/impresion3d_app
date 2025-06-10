@@ -1,0 +1,16 @@
+# Dependencias principales para la aplicación de Impresión 3D
+# Python 3.12+
+
+# Procesamiento de imágenes
+Pillow==10.3.0
+
+# Interfaz gráfica (Tkinter viene incluido con Python)
+# tkinter es parte de la biblioteca estándar de Python
+
+# Base de datos (SQLite3 viene incluido con Python)
+# sqlite3 es parte de la biblioteca estándar de Python
+
+# Dependencias opcionales para desarrollo
+# pytest==8.2.0  # Para pruebas unitarias
+# black==24.4.0  # Para formateo de código
+# pylint==3.1.0  # Para análisis de código
