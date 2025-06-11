@@ -1,36 +1,45 @@
 """
-Widgets personalizados para manejo de colores
+Widgets personalizados para manejo de colores centrados en piezas
 """
 
 import tkinter as tk
 from tkinter import ttk, colorchooser, messagebox
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, Dict
 import re
 
 from models.producto import ColorEspecificacion
 
 
 class ColorPicker(ttk.Frame):
-    """Widget selector de color hexadecimal"""
+    """Widget selector de color hexadecimal compacto"""
 
-    def __init__(self, parent, initial_color="#000000", callback=None):
+    def __init__(self, parent, initial_color="#000000", callback=None, compact=False):
         super().__init__(parent)
 
         self.color_var = tk.StringVar(value=initial_color)
         self.callback = callback
+        self.compact = compact
 
-        # Entry para código hexadecimal
-        self.hex_entry = ttk.Entry(self, textvariable=self.color_var, width=10)
-        self.hex_entry.pack(side=tk.LEFT, padx=(0, 5))
-        self.hex_entry.bind('<FocusOut>', self._validate_hex)
-        self.hex_entry.bind('<Return>', self._validate_hex)
+        if compact:
+            # Versión compacta: solo botón de color
+            self.color_button = tk.Button(
+                self, text="", width=3, height=1,
+                bg=initial_color, command=self._choose_color,
+                relief=tk.RAISED, bd=2
+            )
+            self.color_button.pack()
+        else:
+            # Versión completa: entry + botón
+            self.hex_entry = ttk.Entry(self, textvariable=self.color_var, width=10)
+            self.hex_entry.pack(side=tk.LEFT, padx=(0, 5))
+            self.hex_entry.bind('<FocusOut>', self._validate_hex)
+            self.hex_entry.bind('<Return>', self._validate_hex)
 
-        # Botón de color
-        self.color_button = tk.Button(
-            self, text="   ", width=3, height=1,
-            bg=initial_color, command=self._choose_color
-        )
-        self.color_button.pack(side=tk.LEFT)
+            self.color_button = tk.Button(
+                self, text="   ", width=3, height=1,
+                bg=initial_color, command=self._choose_color
+            )
+            self.color_button.pack(side=tk.LEFT)
 
         # Actualizar color inicial
         self._update_color_display()
@@ -50,6 +59,9 @@ class ColorPicker(ttk.Frame):
 
     def _validate_hex(self, event=None):
         """Validar código hexadecimal"""
+        if self.compact:
+            return
+
         hex_color = self.color_var.get().strip()
 
         # Agregar # si no lo tiene
@@ -83,140 +95,229 @@ class ColorPicker(ttk.Frame):
         self._update_color_display()
 
 
+class PieceColorWidget(ttk.Frame):
+    """Widget para una pieza individual con su color"""
+
+    def __init__(self, parent, pieza_nombre="", color_hex="#000000", peso=0.0, on_delete=None):
+        super().__init__(parent)
+
+        self.on_delete = on_delete
+
+        # Frame principal con borde
+        self.main_frame = ttk.Frame(self, relief=tk.RIDGE, borderwidth=1)
+        self.main_frame.pack(fill=tk.X, padx=2, pady=2)
+
+        # Selector de color (compacto)
+        self.color_picker = ColorPicker(self.main_frame, initial_color=color_hex, compact=True)
+        self.color_picker.pack(side=tk.LEFT, padx=5, pady=5)
+
+        # Nombre de la pieza
+        self.nombre_var = tk.StringVar(value=pieza_nombre)
+        self.nombre_entry = ttk.Entry(self.main_frame, textvariable=self.nombre_var, width=25)
+        self.nombre_entry.pack(side=tk.LEFT, padx=5, pady=5)
+        self.nombre_entry.insert(0, "Nombre de la pieza...")
+        self.nombre_entry.bind('<FocusIn>', self._on_focus_in)
+        self.nombre_entry.bind('<FocusOut>', self._on_focus_out)
+
+        # Peso
+        ttk.Label(self.main_frame, text="Peso:").pack(side=tk.LEFT, padx=(10, 2))
+        self.peso_var = tk.DoubleVar(value=peso)
+        self.peso_spin = ttk.Spinbox(self.main_frame, textvariable=self.peso_var,
+                                    from_=0, to=1000, increment=0.1, width=8)
+        self.peso_spin.pack(side=tk.LEFT, padx=(0, 2))
+        ttk.Label(self.main_frame, text="g").pack(side=tk.LEFT)
+
+        # Botón eliminar
+        if on_delete:
+            ttk.Button(self.main_frame, text="✕", width=3,
+                      command=lambda: on_delete(self)).pack(side=tk.RIGHT, padx=5)
+
+    def _on_focus_in(self, event):
+        """Limpiar placeholder al enfocar"""
+        if self.nombre_var.get() == "Nombre de la pieza...":
+            self.nombre_entry.delete(0, tk.END)
+
+    def _on_focus_out(self, event):
+        """Restaurar placeholder si está vacío"""
+        if not self.nombre_var.get().strip():
+            self.nombre_var.set("Nombre de la pieza...")
+
+    def get_data(self):
+        """Obtener datos de la pieza"""
+        nombre = self.nombre_var.get().strip()
+        if nombre == "Nombre de la pieza...":
+            nombre = ""
+
+        return {
+            'nombre': nombre,
+            'color_hex': self.color_picker.get_color(),
+            'peso': self.peso_var.get()
+        }
+
+    def is_valid(self):
+        """Verificar si la pieza tiene datos válidos"""
+        nombre = self.nombre_var.get().strip()
+        return nombre and nombre != "Nombre de la pieza..." and self.peso_var.get() > 0
+
+
 class ColorSpecificationWidget(ttk.LabelFrame):
-    """Widget para especificar detalles de un color"""
+    """Widget simplificado para especificar colores por pieza"""
 
     def __init__(self, parent, color_spec: Optional[ColorEspecificacion] = None,
                  on_delete=None, index=0):
-        super().__init__(parent, text=f"Color {index + 1}", padding="10")
+        super().__init__(parent, text="Especificaciones de Color por Pieza", padding="10")
 
         self.on_delete = on_delete
         self.index = index
-        self.piezas = []
+        self.piece_widgets = []
 
-        # Inicializar con especificación existente o crear nueva
-        if color_spec:
-            self.color_hex = color_spec.color_hex
-            self.nombre_color = color_spec.nombre_color
-            self.peso_color = color_spec.peso_color
-            self.tiempo_adicional = color_spec.tiempo_adicional
-            self.notas = color_spec.notas
-            self.piezas = color_spec.piezas.copy()
+        # Frame de instrucciones
+        inst_frame = ttk.Frame(self)
+        inst_frame.pack(fill=tk.X, pady=(0, 10))
+
+        ttk.Label(inst_frame, text="💡 Agrega cada pieza con su color y peso:",
+                 font=('Arial', 10, 'italic')).pack(side=tk.LEFT)
+
+        # Frame con scroll para las piezas
+        self.canvas = tk.Canvas(self, height=200)
+        self.scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.scrollbar.pack(side="right", fill="y")
+
+        # Frame para las piezas
+        self.pieces_frame = ttk.Frame(self.scrollable_frame)
+        self.pieces_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        # Botones de acción
+        button_frame = ttk.Frame(self)
+        button_frame.pack(fill=tk.X, pady=(10, 0))
+
+        ttk.Button(button_frame, text="➕ Agregar Pieza",
+                  command=self.agregar_pieza).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(button_frame, text="🎨 Agregar múltiples piezas del mismo color",
+                  command=self.agregar_multiples_piezas).pack(side=tk.LEFT, padx=5)
+
+        # Resumen
+        self.resumen_label = ttk.Label(button_frame, text="Total: 0 piezas, 0g",
+                                      font=('Arial', 10, 'bold'))
+        self.resumen_label.pack(side=tk.RIGHT, padx=5)
+
+        # Cargar datos si existen
+        if color_spec and color_spec.piezas:
+            self.cargar_desde_especificacion(color_spec)
         else:
-            self.color_hex = "#000000"
-            self.nombre_color = ""
-            self.peso_color = 0.0
-            self.tiempo_adicional = 0
-            self.notas = ""
+            # Agregar una pieza por defecto
+            self.agregar_pieza()
 
-        self._create_widgets()
+        # Actualizar resumen
+        self.actualizar_resumen()
 
-    def _create_widgets(self):
-        """Crear los widgets del panel"""
-        # Primera fila: Color y nombre
-        row1 = ttk.Frame(self)
-        row1.pack(fill=tk.X, pady=(0, 10))
+    def cargar_desde_especificacion(self, color_spec: ColorEspecificacion):
+        """Cargar piezas desde una especificación existente"""
+        # Si hay múltiples piezas con el mismo color, crear una entrada para cada una
+        peso_por_pieza = color_spec.peso_color / len(color_spec.piezas) if color_spec.piezas else 0
 
-        ttk.Label(row1, text="Color:").pack(side=tk.LEFT, padx=(0, 5))
-        self.color_picker = ColorPicker(row1, initial_color=self.color_hex)
-        self.color_picker.pack(side=tk.LEFT, padx=(0, 20))
+        for pieza in color_spec.piezas:
+            widget = PieceColorWidget(
+                self.pieces_frame,
+                pieza_nombre=pieza,
+                color_hex=color_spec.color_hex,
+                peso=round(peso_por_pieza, 2),
+                on_delete=self.eliminar_pieza
+            )
+            widget.pack(fill=tk.X, pady=2)
+            self.piece_widgets.append(widget)
 
-        ttk.Label(row1, text="Nombre:").pack(side=tk.LEFT, padx=(0, 5))
-        self.nombre_var = tk.StringVar(value=self.nombre_color)
-        self.nombre_entry = ttk.Entry(row1, textvariable=self.nombre_var, width=20)
-        self.nombre_entry.pack(side=tk.LEFT)
+    def agregar_pieza(self, nombre="", color="#000000", peso=0.0):
+        """Agregar una nueva pieza"""
+        widget = PieceColorWidget(
+            self.pieces_frame,
+            pieza_nombre=nombre,
+            color_hex=color,
+            peso=peso,
+            on_delete=self.eliminar_pieza
+        )
+        widget.pack(fill=tk.X, pady=2)
+        self.piece_widgets.append(widget)
+        self.actualizar_resumen()
 
-        # Botón eliminar
-        if self.on_delete:
-            ttk.Button(row1, text="🗑️ Eliminar",
-                       command=lambda: self.on_delete(self.index)).pack(side=tk.RIGHT)
+        # Auto-scroll al final
+        self.canvas.update_idletasks()
+        self.canvas.yview_moveto(1)
 
-        # Segunda fila: Peso y tiempo
-        row2 = ttk.Frame(self)
-        row2.pack(fill=tk.X, pady=(0, 10))
-
-        ttk.Label(row2, text="Peso (g):").pack(side=tk.LEFT, padx=(0, 5))
-        self.peso_var = tk.DoubleVar(value=self.peso_color)
-        self.peso_spin = ttk.Spinbox(row2, textvariable=self.peso_var,
-                                     from_=0, to=1000, increment=0.1, width=10)
-        self.peso_spin.pack(side=tk.LEFT, padx=(0, 20))
-
-        ttk.Label(row2, text="Tiempo cambio color (min):").pack(side=tk.LEFT, padx=(0, 5))
-        self.tiempo_var = tk.IntVar(value=self.tiempo_adicional)
-        self.tiempo_spin = ttk.Spinbox(row2, textvariable=self.tiempo_var,
-                                       from_=0, to=60, increment=1, width=10)
-        self.tiempo_spin.pack(side=tk.LEFT)
-
-        # Tercera fila: Piezas
-        row3 = ttk.Frame(self)
-        row3.pack(fill=tk.X, pady=(0, 10))
-
-        ttk.Label(row3, text="Piezas:").pack(side=tk.LEFT, anchor=tk.N, padx=(0, 5))
-
-        piezas_frame = ttk.Frame(row3)
-        piezas_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Lista de piezas
-        self.piezas_listbox = tk.Listbox(piezas_frame, height=3, width=30)
-        self.piezas_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        # Scrollbar para lista
-        scrollbar = ttk.Scrollbar(piezas_frame, orient="vertical")
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.piezas_listbox.configure(yscrollcommand=scrollbar.set)
-        scrollbar.configure(command=self.piezas_listbox.yview)
-
-        # Cargar piezas existentes
-        for pieza in self.piezas:
-            self.piezas_listbox.insert(tk.END, pieza)
-
-        # Botones para piezas
-        btn_frame = ttk.Frame(row3)
-        btn_frame.pack(side=tk.LEFT, padx=(10, 0))
-
-        ttk.Button(btn_frame, text="➕", width=3,
-                   command=self._agregar_pieza).pack(pady=2)
-        ttk.Button(btn_frame, text="➖", width=3,
-                   command=self._eliminar_pieza).pack(pady=2)
-
-        # Cuarta fila: Notas
-        row4 = ttk.Frame(self)
-        row4.pack(fill=tk.X)
-
-        ttk.Label(row4, text="Notas:").pack(side=tk.LEFT, anchor=tk.N, padx=(0, 5))
-        self.notas_text = tk.Text(row4, height=2, width=40, wrap=tk.WORD)
-        self.notas_text.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        self.notas_text.insert('1.0', self.notas)
-
-    def _agregar_pieza(self):
-        """Agregar una pieza a la lista"""
+    def agregar_multiples_piezas(self):
+        """Diálogo para agregar múltiples piezas del mismo color"""
         dialog = tk.Toplevel(self)
-        dialog.title("Agregar Pieza")
-        dialog.geometry("300x100")
+        dialog.title("Agregar múltiples piezas")
+        dialog.geometry("400x300")
         dialog.transient(self)
         dialog.grab_set()
 
-        ttk.Label(dialog, text="Nombre de la pieza:").pack(pady=10)
+        # Frame principal
+        main_frame = ttk.Frame(dialog, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
-        pieza_var = tk.StringVar()
-        entry = ttk.Entry(dialog, textvariable=pieza_var, width=30)
-        entry.pack(pady=5)
-        entry.focus()
+        # Color
+        color_frame = ttk.Frame(main_frame)
+        color_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(color_frame, text="Color para todas las piezas:").pack(side=tk.LEFT, padx=(0, 10))
+        color_picker = ColorPicker(color_frame, initial_color="#000000")
+        color_picker.pack(side=tk.LEFT)
+
+        # Lista de piezas
+        ttk.Label(main_frame, text="Piezas (una por línea):").pack(anchor=tk.W, pady=(10, 5))
+
+        text_frame = ttk.Frame(main_frame)
+        text_frame.pack(fill=tk.BOTH, expand=True)
+
+        piezas_text = tk.Text(text_frame, height=8, width=40)
+        piezas_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(text_frame, command=piezas_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        piezas_text.config(yscrollcommand=scrollbar.set)
+
+        # Peso por pieza
+        peso_frame = ttk.Frame(main_frame)
+        peso_frame.pack(fill=tk.X, pady=(10, 0))
+        ttk.Label(peso_frame, text="Peso por pieza (g):").pack(side=tk.LEFT, padx=(0, 10))
+        peso_var = tk.DoubleVar(value=5.0)
+        peso_spin = ttk.Spinbox(peso_frame, textvariable=peso_var,
+                               from_=0, to=100, increment=0.5, width=10)
+        peso_spin.pack(side=tk.LEFT)
+
+        # Botones
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(fill=tk.X, pady=(15, 0))
 
         def agregar():
-            pieza = pieza_var.get().strip()
-            if pieza:
-                self.piezas_listbox.insert(tk.END, pieza)
-                self.piezas.append(pieza)
-                dialog.destroy()
+            color = color_picker.get_color()
+            peso = peso_var.get()
+            piezas = piezas_text.get('1.0', 'end-1c').strip().split('\n')
 
-        entry.bind('<Return>', lambda e: agregar())
+            for pieza in piezas:
+                pieza = pieza.strip()
+                if pieza:
+                    self.agregar_pieza(pieza, color, peso)
 
-        btn_frame = ttk.Frame(dialog)
-        btn_frame.pack(pady=10)
+            dialog.destroy()
 
-        ttk.Button(btn_frame, text="Agregar", command=agregar).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Cancelar", command=dialog.destroy).pack(side=tk.LEFT)
+        ttk.Button(btn_frame, text="Agregar", command=agregar).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Cancelar", command=dialog.destroy).pack(side=tk.RIGHT)
+
+        # Placeholder de ejemplo
+        piezas_text.insert('1.0', "Ejemplo:\nBase\nTapa\nBotón frontal\nBotón trasero")
 
         # Centrar diálogo
         dialog.update_idletasks()
@@ -224,33 +325,115 @@ class ColorSpecificationWidget(ttk.LabelFrame):
         y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
         dialog.geometry(f'+{x}+{y}')
 
-    def _eliminar_pieza(self):
-        """Eliminar pieza seleccionada"""
-        selection = self.piezas_listbox.curselection()
-        if selection:
-            index = selection[0]
-            self.piezas_listbox.delete(index)
-            del self.piezas[index]
+    def eliminar_pieza(self, widget):
+        """Eliminar una pieza"""
+        if len(self.piece_widgets) > 1:
+            widget.destroy()
+            self.piece_widgets.remove(widget)
+            self.actualizar_resumen()
+        else:
+            messagebox.showwarning("Advertencia", "Debe mantener al menos una pieza")
+
+    def actualizar_resumen(self):
+        """Actualizar el resumen de piezas y peso"""
+        total_piezas = len(self.piece_widgets)
+        total_peso = sum(w.peso_var.get() for w in self.piece_widgets if hasattr(w, 'peso_var'))
+        self.resumen_label.config(text=f"Total: {total_piezas} piezas, {total_peso:.1f}g")
 
     def get_specification(self) -> ColorEspecificacion:
-        """Obtener la especificación de color"""
-        # Actualizar lista de piezas
-        self.piezas = list(self.piezas_listbox.get(0, tk.END))
+        """Obtener la especificación de color consolidada"""
+        # Agrupar piezas por color
+        color_groups = {}
+
+        for widget in self.piece_widgets:
+            data = widget.get_data()
+            if widget.is_valid():
+                color = data['color_hex']
+                if color not in color_groups:
+                    color_groups[color] = {
+                        'piezas': [],
+                        'peso_total': 0.0,
+                        'nombre_color': ""
+                    }
+                color_groups[color]['piezas'].append(data['nombre'])
+                color_groups[color]['peso_total'] += data['peso']
+
+        # Si no hay grupos válidos, devolver especificación vacía
+        if not color_groups:
+            return ColorEspecificacion()
+
+        # Por ahora, devolver la primera especificación (la más usada)
+        # En el futuro, podrías devolver múltiples especificaciones
+        color_hex = max(color_groups.keys(), key=lambda k: len(color_groups[k]['piezas']))
+        group = color_groups[color_hex]
 
         return ColorEspecificacion(
-            color_hex=self.color_picker.get_color(),
-            nombre_color=self.nombre_var.get().strip(),
-            peso_color=self.peso_var.get(),
-            tiempo_adicional=self.tiempo_var.get(),
-            notas=self.notas_text.get('1.0', 'end-1c').strip(),
-            piezas=self.piezas
+            color_hex=color_hex,
+            nombre_color=self._get_color_name(color_hex),
+            peso_color=group['peso_total'],
+            tiempo_adicional=5 if len(color_groups) > 1 else 0,  # Tiempo si hay cambio de color
+            piezas=group['piezas'],
+            notas=f"Total de colores diferentes: {len(color_groups)}"
         )
+
+    def get_all_specifications(self) -> List[ColorEspecificacion]:
+        """Obtener todas las especificaciones de color (una por cada color único)"""
+        # Agrupar piezas por color
+        color_groups = {}
+
+        for widget in self.piece_widgets:
+            data = widget.get_data()
+            if widget.is_valid():
+                color = data['color_hex']
+                if color not in color_groups:
+                    color_groups[color] = {
+                        'piezas': [],
+                        'peso_total': 0.0
+                    }
+                color_groups[color]['piezas'].append(data['nombre'])
+                color_groups[color]['peso_total'] += data['peso']
+
+        # Crear una especificación por cada color
+        specifications = []
+        for i, (color_hex, group) in enumerate(color_groups.items()):
+            spec = ColorEspecificacion(
+                color_hex=color_hex,
+                nombre_color=self._get_color_name(color_hex),
+                peso_color=group['peso_total'],
+                tiempo_adicional=5 if i > 0 else 0,  # Tiempo de cambio después del primer color
+                piezas=group['piezas'],
+                notas=""
+            )
+            specifications.append(spec)
+
+        return specifications
+
+    def _get_color_name(self, hex_color):
+        """Obtener nombre descriptivo del color"""
+        # Mapa básico de colores comunes
+        color_names = {
+            '#000000': 'Negro',
+            '#FFFFFF': 'Blanco',
+            '#FF0000': 'Rojo',
+            '#00FF00': 'Verde',
+            '#0000FF': 'Azul',
+            '#FFFF00': 'Amarillo',
+            '#FF00FF': 'Magenta',
+            '#00FFFF': 'Cyan',
+            '#FFA500': 'Naranja',
+            '#800080': 'Morado',
+            '#FFC0CB': 'Rosa',
+            '#808080': 'Gris',
+            '#A52A2A': 'Marrón'
+        }
+
+        return color_names.get(hex_color.upper(), hex_color)
 
 
 class ColorFilterWidget(ttk.Frame):
     """Widget para filtrar por colores"""
 
-    def __init__(self, parent, colors: List[dict], on_filter_change=None):
+    def __init__(self, parent, colors: List[Dict], on_filter_change=None):
         super().__init__(parent)
 
         self.colors = colors
@@ -316,7 +499,7 @@ class ColorFilterWidget(ttk.Frame):
 
         # Botón para limpiar filtros
         ttk.Button(self, text="Limpiar filtros",
-                   command=self.clear_filters).pack(pady=(5, 0))
+                  command=self.clear_filters).pack(pady=(5, 0))
 
     def _toggle_color(self, color_hex, var):
         """Alternar selección de color"""

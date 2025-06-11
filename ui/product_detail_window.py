@@ -109,12 +109,12 @@ class ProductDetailWindow:
         right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Especificaciones de color
-        color_frame = ttk.LabelFrame(right_frame, text="🎨 Especificaciones de Color", padding="10")
+        color_frame = ttk.LabelFrame(right_frame, text="🎨 Especificaciones de Color - Desglose por Piezas", padding="10")
         color_frame.pack(fill=tk.X)
 
         if self.producto.colores_especificaciones:
             # Crear un canvas con scroll para las especificaciones
-            canvas = tk.Canvas(color_frame, height=150)
+            canvas = tk.Canvas(color_frame, height=200)
             scrollbar = ttk.Scrollbar(color_frame, orient="vertical", command=canvas.yview)
             scrollable_frame = ttk.Frame(canvas)
 
@@ -126,53 +126,91 @@ class ProductDetailWindow:
             canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
             canvas.configure(yscrollcommand=scrollbar.set)
 
-            # Mostrar cada especificación de color
-            for i, color_spec in enumerate(self.producto.colores_especificaciones):
-                spec_frame = ttk.Frame(scrollable_frame, relief=tk.RIDGE, borderwidth=1)
-                spec_frame.pack(fill=tk.X, padx=5, pady=5)
+            # Agrupar piezas por color para mejor visualización
+            color_groups = {}
+            for color_spec in self.producto.colores_especificaciones:
+                if color_spec.color_hex not in color_groups:
+                    color_groups[color_spec.color_hex] = {
+                        'nombre': color_spec.nombre_color,
+                        'piezas': [],
+                        'peso_total': 0,
+                        'tiempo_adicional': color_spec.tiempo_adicional
+                    }
+                color_groups[color_spec.color_hex]['piezas'].extend(color_spec.piezas)
+                color_groups[color_spec.color_hex]['peso_total'] += color_spec.peso_color
+
+            # Mostrar cada grupo de color
+            for i, (color_hex, group) in enumerate(color_groups.items()):
+                # Frame para el grupo de color
+                group_frame = ttk.Frame(scrollable_frame, relief=tk.RIDGE, borderwidth=1)
+                group_frame.pack(fill=tk.X, padx=5, pady=5)
 
                 # Cabecera con color
-                header_frame = ttk.Frame(spec_frame)
+                header_frame = ttk.Frame(group_frame)
                 header_frame.pack(fill=tk.X, padx=10, pady=5)
 
-                # Muestra de color
-                color_label = tk.Label(header_frame, text="   ", bg=color_spec.color_hex,
-                                     width=3, height=1, relief=tk.SUNKEN)
+                # Muestra de color grande
+                color_label = tk.Label(header_frame, text="", bg=color_hex,
+                                     width=6, height=2, relief=tk.SUNKEN)
                 color_label.pack(side=tk.LEFT, padx=(0, 10))
 
-                # Nombre y código
-                ttk.Label(header_frame, text=f"{color_spec.nombre_color or 'Sin nombre'} ({color_spec.color_hex})",
-                         font=('Arial', 10, 'bold')).pack(side=tk.LEFT)
+                # Información del color
+                info_frame = ttk.Frame(header_frame)
+                info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-                # Detalles
-                details_frame = ttk.Frame(spec_frame)
-                details_frame.pack(fill=tk.X, padx=10, pady=(0, 5))
-
-                ttk.Label(details_frame, text=f"Peso: {color_spec.peso_color}g",
-                         font=('Arial', 9)).pack(anchor=tk.W)
-
-                if color_spec.tiempo_adicional > 0:
-                    ttk.Label(details_frame, text=f"Tiempo cambio: +{color_spec.tiempo_adicional} min",
-                             font=('Arial', 9)).pack(anchor=tk.W)
-
-                # Piezas
-                if color_spec.piezas:
-                    piezas_text = "Piezas: " + ", ".join(color_spec.piezas[:3])
-                    if len(color_spec.piezas) > 3:
-                        piezas_text += f" (+{len(color_spec.piezas) - 3} más)"
-                    ttk.Label(details_frame, text=piezas_text,
+                ttk.Label(info_frame, text=f"{group['nombre'] or 'Sin nombre'} ({color_hex})",
+                         font=('Arial', 11, 'bold')).pack(anchor=tk.W)
+                ttk.Label(info_frame, text=f"Peso total: {group['peso_total']:.1f}g",
+                         font=('Arial', 10)).pack(anchor=tk.W)
+                if group['tiempo_adicional'] > 0:
+                    ttk.Label(info_frame, text=f"Tiempo cambio: +{group['tiempo_adicional']} min",
                              font=('Arial', 9), foreground='#666666').pack(anchor=tk.W)
 
-                # Notas
-                if color_spec.notas:
-                    ttk.Label(details_frame, text=f"Notas: {color_spec.notas[:50]}...",
-                             font=('Arial', 9), foreground='#666666').pack(anchor=tk.W)
+                # Lista de piezas
+                piezas_frame = ttk.Frame(group_frame)
+                piezas_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+                ttk.Label(piezas_frame, text="Piezas:", font=('Arial', 10, 'bold')).pack(anchor=tk.W)
+
+                # Mostrar piezas en columnas si son muchas
+                piezas_list_frame = ttk.Frame(piezas_frame)
+                piezas_list_frame.pack(fill=tk.X, padx=(20, 0))
+
+                piezas = group['piezas']
+                if len(piezas) > 6:  # Si hay muchas piezas, usar columnas
+                    col1 = ttk.Frame(piezas_list_frame)
+                    col1.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+                    col2 = ttk.Frame(piezas_list_frame)
+                    col2.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+                    mid = len(piezas) // 2
+                    for j, pieza in enumerate(piezas[:mid]):
+                        ttk.Label(col1, text=f"• {pieza}", font=('Arial', 9)).pack(anchor=tk.W)
+                    for j, pieza in enumerate(piezas[mid:]):
+                        ttk.Label(col2, text=f"• {pieza}", font=('Arial', 9)).pack(anchor=tk.W)
+                else:
+                    for pieza in piezas:
+                        ttk.Label(piezas_list_frame, text=f"• {pieza}", font=('Arial', 9)).pack(anchor=tk.W)
 
             canvas.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
+
+            # Resumen total
+            resumen_frame = ttk.Frame(color_frame)
+            resumen_frame.pack(fill=tk.X, pady=(10, 0))
+
+            ttk.Separator(resumen_frame, orient='horizontal').pack(fill=tk.X, pady=5)
+
+            total_colores = len(color_groups)
+            total_piezas = sum(len(g['piezas']) for g in color_groups.values())
+
+            ttk.Label(resumen_frame,
+                     text=f"Total: {total_colores} colores diferentes, {total_piezas} piezas",
+                     font=('Arial', 10, 'bold')).pack()
+
         else:
             ttk.Label(color_frame, text="No hay especificaciones de color definidas",
-                     font=('Arial', 10), foreground='#666666').pack()
+                     font=('Arial', 10), foreground='#666666').pack(pady=20)
 
         # Configuración de impresión
         config_frame = ttk.LabelFrame(right_frame, text="⚙️ Configuración de Impresión", padding="10")

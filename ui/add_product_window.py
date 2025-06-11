@@ -318,18 +318,19 @@ class AddProductWindow:
             return
 
         try:
-            # Obtener especificaciones de color
+            # Obtener todas las especificaciones de color
             color_specs = []
             peso_total = 0.0
 
             for widget in self.color_specifications:
-                spec = widget.get_specification()
-                if spec.peso_color > 0:  # Solo agregar si tiene peso
-                    color_specs.append(spec)
-                    peso_total += spec.peso_color
+                specs = widget.get_all_specifications()
+                for spec in specs:
+                    if spec.peso_color > 0:  # Solo agregar si tiene peso
+                        color_specs.append(spec)
+                        peso_total += spec.peso_color
 
             if not color_specs:
-                messagebox.showerror("Error", "Debe agregar al menos un color con peso mayor a 0")
+                messagebox.showerror("Error", "Debe agregar al menos una pieza con peso mayor a 0")
                 return
 
             # Crear objeto producto

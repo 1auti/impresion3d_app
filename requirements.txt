@@ -4,6 +4,9 @@
 # Procesamiento de imágenes
 Pillow==10.3.0
 
+# Desarrollo y distribución (opcional)
+pyinstaller==6.3.0  # Para crear ejecutables
+
 # Interfaz gráfica (Tkinter viene incluido con Python)
 # tkinter es parte de la biblioteca estándar de Python
 
