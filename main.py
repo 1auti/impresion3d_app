@@ -11,7 +11,7 @@ from pathlib import Path
 # Agregar el directorio raíz al path para importaciones
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from ui.main_window import MainWindow
+from ui.main_window import ModernMainWindow
 from database.db_manager import DatabaseManager
 import tkinter as tk
 from tkinter import messagebox
@@ -41,13 +41,13 @@ def main():
 
         # Crear ventana principal
         root = tk.Tk()
-        app = MainWindow(root)
+        app = ModernMainWindow(root)
 
         # Centrar ventana
         root.update_idletasks()
         width = root.winfo_width()
         height = root.winfo_height()
-        x = (root.winfo_screenwidth() // 2) - (width // 2)
+        x = (root.winfo_screenwidth() // 2) -(width // 2)
         y = (root.winfo_screenheight() // 2) - (height // 2)
         root.geometry(f'{width}x{height}+{x}+{y}')
 
