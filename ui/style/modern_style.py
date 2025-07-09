@@ -17,7 +17,8 @@ class ModernStyle:
             'heading': ('Segoe UI', 14, 'bold'),
             'subheading': ('Segoe UI', 12),
             'body': ('Segoe UI', 10),
-            'small': ('Segoe UI', 9)
+            'small': ('Segoe UI', 9),
+            'caption': ('Segoe UI', 8)
         }
 
     def apply_styles(self, root):

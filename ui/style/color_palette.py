@@ -20,6 +20,7 @@ class ColorPalette:
     # Bordes y sombras
     BORDER = '#E2E8F0'
     SHADOW = '#94A3B8'
+    ACCENT = '#F1F5F9'
 
     # Gradientes
     GRADIENT_START = '#6366F1'
@@ -41,6 +42,7 @@ class ColorPalette:
             'text_secondary': cls.TEXT_SECONDARY,
             'border': cls.BORDER,
             'shadow': cls.SHADOW,
+            'accent': cls.ACCENT,
             'gradient_start': cls.GRADIENT_START,
             'gradient_end': cls.GRADIENT_END
         }

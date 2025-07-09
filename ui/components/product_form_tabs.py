@@ -260,7 +260,7 @@ class ColorsTab(BaseFormTab):
         self._create_instructions_card(main_content)
 
         # Área de especificaciones
-        self._create_specifications_area(main_content)
+        self._create_instructions_card(main_content)
 
     def _create_instructions_card(self, parent):
         """Crear tarjeta de instrucciones"""
@@ -583,12 +583,15 @@ class ColorSpecificationWidget(tk.Frame):
 
     def get_all_specifications(self):
         """Obtener todas las especificaciones como objetos"""
-        from models.color_specification import ColorSpecification
+        # ✅ IMPORT CORRECTO:
+        from models.producto import ColorEspecificacion
 
-        # Retornar una especificación (puede expandirse para múltiples)
-        return [ColorSpecification(
-            nombre_pieza=self.vars['nombre_pieza'].get(),
+        # ✅ PARÁMETROS CORRECTOS según models/producto.py:
+        return [ColorEspecificacion(
             color_hex=self.vars['color_hex'].get(),
             nombre_color=self.vars['nombre_color'].get(),
-            peso_color=self.vars['peso_color'].get()
+            piezas=[self.vars['nombre_pieza'].get()],  # ✅ Lista de piezas
+            peso_color=self.vars['peso_color'].get(),
+            tiempo_adicional=0,  # ✅ Parámetro requerido
+            notas=""  # ✅ Parámetro requerido
         )]
