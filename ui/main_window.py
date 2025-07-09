@@ -19,7 +19,7 @@ from .controllers.product_controller import ProductController
 # Importar otros módulos necesarios
 from database.db_manager import DatabaseManager
 from ui.add_product_window import ModernAddProductWindow
-from ui.edit_product_window import ModernEditProductWindow
+from ui.edit_product_window import ModernEditProductWindowRefactored
 from ui.product_detail_window import ModernProductDetailWindow
 
 
@@ -210,7 +210,7 @@ class ModernMainWindow:
         if not producto:
             return
 
-        ventana = ModernEditProductWindow(self.root, self.db_manager, producto)
+        ventana = ModernEditProductWindowRefactored(self.root, self.db_manager, producto)
         self.root.wait_window(ventana.window)
 
         if ventana.producto_actualizado:

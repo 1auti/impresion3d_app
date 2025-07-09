@@ -9,8 +9,8 @@ from typing import List, Callable
 import os
 from PIL import Image, ImageTk, ImageDraw
 
-from ui.components.base_components import ModernFrame, ModernField, ModernButton, ScrollableFrame
-from ui.config.styles import ModernTheme
+from ui.components.base import ModernFrame, ModernField, ModernButton, ScrollableFrame
+from config.styles import ModernTheme
 from ui.state.form_state import FormStateManager, ImageStateManager, GuideStateManager
 from utils.file_utils import FileUtils
 
