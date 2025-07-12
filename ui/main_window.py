@@ -19,7 +19,7 @@ from .controllers import ProductController
 
 from .windows import (
     ModernAddProductWindow,
-    ModernEditProductWindowRefactored,
+    ModernEditProductWindow,
     ModernProductDetailWindow
 )
 
@@ -237,7 +237,7 @@ class ModernMainWindow:
                 self.notifications.show_notification("Seleccione un producto para editar", 'warning')
                 return
 
-            ventana = ModernEditProductWindowRefactored(self.root, self.db_manager, producto)
+            ventana = ModernEditProductWindow(self.root, self.db_manager, producto)
             self.root.wait_window(ventana.window)
 
             if ventana.producto_actualizado:

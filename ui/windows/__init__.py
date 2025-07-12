@@ -8,13 +8,13 @@
 # Importaciones
 from .modern_detail_product import  ModernProductDetailWindow
 from .modern_add_product import ModernAddProductWindow
-from .modern_edit_product import ModernEditProductWindowRefactored
+from .modern_edit_product import ModernEditProductWindow
 
 # Exportamos para que sea mas facil de implementar
 __all__ = [
     "ModernProductDetailWindow",
     "ModernAddProductWindow",
-    "ModernEditProductWindowRefactored"
+    "ModernEditProductWindow"
 ]
 
 # Funcion para verificar que todas las ventanas estan disponibles
@@ -27,7 +27,7 @@ def get_windows_class(windows_name):
     """ Obtenemos una clase de ventana  por nombre"""
     windows_map = {
         'add' : ModernAddProductWindow,
-        'edit' : ModernEditProductWindowRefactored,
+        'edit' : ModernEditProductWindow,
         'details' : ModernProductDetailWindow
 
     }

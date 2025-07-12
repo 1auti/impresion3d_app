@@ -7,7 +7,7 @@ from pathlib import Path
 # Configurar path para importaciones
 sys.path.append(str(Path(__file__).parent))
 
-# ✅ IMPORTACIÓN LIMPIA usando ui/__init__.py
+
 from ui import ModernMainWindow, create_application, check_ui_dependencies
 from config.app_config import setup_application_directories
 
