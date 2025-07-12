@@ -1,61 +1,58 @@
-#!/usr/bin/env python3
 """
-Aplicación de Gestión de Productos para Impresión 3D
-Punto de entrada principal
+Punto de entrada principal de la aplicación 3D Print Manager
 """
-
 import sys
-import os
 from pathlib import Path
 
-# Agregar el directorio raíz al path para importaciones
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Configurar path para importaciones
+sys.path.append(str(Path(__file__).parent))
 
-from ui.main_window import ModernMainWindow
-from database.db_manager import DatabaseManager
-import tkinter as tk
-from tkinter import messagebox
-
-
-def setup_directories():
-    """Crear directorios necesarios si no existen"""
-    directories = [
-        Path("data"),
-        Path("assets"),
-        Path("assets/images")
-    ]
-
-    for directory in directories:
-        directory.mkdir(exist_ok=True)
+# ✅ IMPORTACIÓN LIMPIA usando ui/__init__.py
+from ui import ModernMainWindow, create_application, check_ui_dependencies
+from config.app_config import setup_application_directories
 
 
 def main():
-    """Función principal"""
+    """Función principal de la aplicación"""
     try:
-        # Configurar directorios
-        setup_directories()
+        # Configurar directorios necesarios
+        setup_application_directories()
 
-        # Inicializar base de datos
-        db_manager = DatabaseManager()
-        db_manager.init_database()
+        # ✅ Verificar dependencias UI
+        deps = check_ui_dependencies()
+        if not deps['PIL']:
+            print("⚠️ Advertencia: PIL/Pillow no está disponible. Algunas funciones de imagen pueden fallar.")
 
-        # Crear ventana principal
+        # ✅ OPCIÓN 1: Crear aplicación manualmente
+        import tkinter as tk
         root = tk.Tk()
         app = ModernMainWindow(root)
-
-        # Centrar ventana
-        root.update_idletasks()
-        width = root.winfo_width()
-        height = root.winfo_height()
-        x = (root.winfo_screenwidth() // 2) -(width // 2)
-        y = (root.winfo_screenheight() // 2) - (height // 2)
-        root.geometry(f'{width}x{height}+{x}+{y}')
-
-        # Iniciar aplicación
         root.mainloop()
 
+        # ✅ OPCIÓN 2: Usar función helper (alternativa)
+        # root, app = create_application()
+        # root.mainloop()
+
+    except ImportError as e:
+        error_msg = f"Error de importación: {str(e)}\n\nVerifica que todos los módulos estén disponibles."
+        print(error_msg)
+        sys.exit(1)
+
     except Exception as e:
-        messagebox.showerror("Error", f"Error al iniciar la aplicación: {str(e)}")
+        # Manejar errores críticos
+        import traceback
+        error_msg = f"Error crítico al iniciar la aplicación:\n\n{str(e)}\n\n{traceback.format_exc()}"
+
+        # Mostrar error en ventana si es posible
+        try:
+            import tkinter as tk
+            root = tk.Tk()
+            root.withdraw()  # Ocultar ventana principal
+            tk.messagebox.showerror("Error Crítico", error_msg)
+        except:
+            # Si no se puede mostrar GUI, imprimir en consola
+            print(error_msg)
+
         sys.exit(1)
 
 

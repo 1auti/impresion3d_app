@@ -3,6 +3,7 @@ Configuración central de la aplicación 3D Print Manager
 """
 import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Tuple
 
 
@@ -37,9 +38,12 @@ class UIConfig:
 @dataclass
 class FileConfig:
     """Configuración de archivos"""
-    images_folder: str = "assets/product_images"
-    export_folder: str = "exports"
+    # ✅ Cambiar para coincidir con setup_application_directories()
+    images_folder: str = "assets/images"  # Era "assets/product_images"
+    export_folder: str = "data/exports"   # Era "exports"
     temp_folder: str = "temp"
+    backup_folder: str = "data/backups"   # ✅ Agregar esta línea
+    logs_folder: str = "logs"             # ✅ Agregar esta línea
     max_image_size: Tuple[int, int] = (800, 600)
     allowed_image_formats: Tuple[str, ...] = ('.jpg', '.jpeg', '.png', '.bmp', '.gif')
 
@@ -59,10 +63,13 @@ class AppConfig:
     def _create_directories(self):
         """Crear directorios necesarios"""
         directories = [
-            os.path.dirname(self.database.db_path),
-            self.files.images_folder,
-            self.files.export_folder,
-            self.files.temp_folder
+            os.path.dirname(self.database.db_path), #/data
+            self.files.images_folder, # /assets/images/
+            self.files.export_folder, #data/exports/
+            self.files.temp_folder, # temp/
+            self.files.backup_folder, # data/backups
+            self.files.logs_folder #logs/
+
         ]
 
         for directory in directories:
@@ -88,6 +95,14 @@ class AppConfig:
         """Verificar si el formato de imagen es válido"""
         _, ext = os.path.splitext(filename.lower())
         return ext in self.files.allowed_image_formats
+
+    def get_backup_path(self, filename):
+        """Obtener ruta completa para backup"""
+        return os.path.join(self.files.backup_folder, filename)
+
+    def get_logs_path(self, filename):
+        """Obtener ruta completa para logs"""
+        return os.path.join(self.files.logs_folder, filename)
 
 
 # Instancia global de configuración
@@ -162,3 +177,61 @@ def get_config_for_environment(env="production"):
 
     config_class = configs.get(env, ProductionConfig)
     return config_class()
+
+
+def setup_application_directories():
+    """
+    Crear directorios básicos necesarios para la aplicación
+
+    Returns:
+        bool: True si todo fue exitoso
+    """
+    # Directorio base del proyecto
+    base_dir = Path(__file__).parent.parent
+
+    # Directorios necesarios
+    directories = [
+        'data',  # Base de datos
+        'assets',  # Recursos
+        'assets/images',  # Imágenes de productos
+        'logs',  # Archivos de log
+        'temp',  # Archivos temporales
+        'data/backups',  # Respaldos
+        'data/exports'  # Exportaciones
+    ]
+
+    print("📁 Creando directorios necesarios...")
+
+    success = True
+    for directory in directories:
+        dir_path = base_dir / directory
+        try:
+            dir_path.mkdir(parents=True, exist_ok=True)
+            print(f"   ✅ {directory}")
+        except Exception as e:
+            print(f"   ❌ {directory}: {e}")
+            success = False
+
+    # Crear archivo de configuración básico si no existe
+    config_file = base_dir / 'config' / 'app_settings.json'
+    if not config_file.exists():
+        try:
+            config_file.parent.mkdir(parents=True, exist_ok=True)
+            import json
+            default_config = {
+                "version": "1.0.0",
+                "first_run": True,
+                "theme": "modern"
+            }
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(default_config, f, indent=2)
+            print(f"   ✅ Configuración inicial creada")
+        except Exception as e:
+            print(f"   ⚠️  Error creando configuración: {e}")
+
+    if success:
+        print("✅ Directorios configurados exitosamente")
+    else:
+        print("⚠️  Algunos directorios no se pudieron crear")
+
+    return success

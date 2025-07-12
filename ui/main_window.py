@@ -4,23 +4,28 @@ Ventana principal modernizada y simplificada de la aplicación
 import tkinter as tk
 from tkinter import messagebox
 
-# Importar componentes
-from .style.modern_style import ModernStyle
-from .components.header import HeaderComponent
-from .components.sidebar import SidebarComponent
-from .components.product_list import ProductListComponent
-from .components.detail_panel import DetailPanelComponent
-from .components.dialogs import ModernDialogs, NotificationSystem
-from .components.modern_widgets import ModernWidgets
+from .style import ModernStyle
 
-# Importar controladores
-from .controllers.product_controller import ProductController
+
+from .components import (
+    HeaderComponent,
+    SidebarComponent,
+    ProductListComponent,
+    DetailPanelComponent,
+    ModernDialogs,
+    NotificationSystem,
+    ModernWidgets
+)
+from .controllers import ProductController
+
+from .windows import (
+    ModernAddProductWindow,
+    ModernEditProductWindowRefactored,
+    ModernProductDetailWindow
+)
 
 # Importar otros módulos necesarios
 from database.db_manager import DatabaseManager
-from ui.windows.modern_add_product import ModernAddProductWindow
-from ui.windows.modern_edit_product import ModernEditProductWindowRefactored
-from ui.windows.modern_detail_product import ModernProductDetailWindow
 
 
 class ModernMainWindow:
@@ -54,21 +59,18 @@ class ModernMainWindow:
 
     def _initialize_systems(self):
         """Inicializar sistemas principales"""
-        # Aplicar estilos modernos
         self.styles = ModernStyle()
         self.styles.apply_styles(self.root)
 
         # Base de datos
         self.db_manager = DatabaseManager()
 
-        # Controlador de productos
+
         self.product_controller = ProductController(self.db_manager)
 
-        # Sistema de diálogos y notificaciones
         self.dialogs = ModernDialogs(self.root)
         self.notifications = NotificationSystem(self.root)
 
-        # Widgets helper
         self.widgets = ModernWidgets(self.styles.colors, self.styles.fonts)
 
     def _create_interface(self):
@@ -77,7 +79,7 @@ class ModernMainWindow:
         self.main_container = tk.Frame(self.root, bg=self.styles.colors['bg'])
         self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # Header
+        # ✅ Header (usando __init__.py)
         self.header = HeaderComponent(
             self.main_container,
             on_stats_click=self._show_statistics,
@@ -92,11 +94,9 @@ class ModernMainWindow:
         content_frame.grid_columnconfigure(1, weight=1)
         content_frame.grid_rowconfigure(0, weight=1)
 
-        # Sidebar
         self.sidebar = SidebarComponent(content_frame, self._get_sidebar_callbacks())
         self.sidebar.grid(row=0, column=0, sticky='nsew', padx=(0, 20))
 
-        # Lista de productos
         self.product_list = ProductListComponent(
             content_frame,
             on_selection_change=self._on_product_selection_change,
@@ -104,7 +104,6 @@ class ModernMainWindow:
         )
         self.product_list.grid(row=0, column=1, sticky='nsew')
 
-        # Panel de detalles
         self.detail_panel = DetailPanelComponent(content_frame)
         self.detail_panel.grid(row=0, column=2, sticky='nsew', padx=(20, 0))
 
@@ -197,6 +196,7 @@ class ModernMainWindow:
     # Métodos de acciones
     def _new_product(self):
         """Crear nuevo producto"""
+
         ventana = ModernAddProductWindow(self.root, self.db_manager)
         self.root.wait_window(ventana.window)
 
@@ -210,6 +210,7 @@ class ModernMainWindow:
         if not producto:
             return
 
+
         ventana = ModernEditProductWindowRefactored(self.root, self.db_manager, producto)
         self.root.wait_window(ventana.window)
 
@@ -222,6 +223,7 @@ class ModernMainWindow:
         producto = self.product_controller.get_producto_seleccionado()
         if not producto:
             return
+
 
         ventana = ModernProductDetailWindow(self.root, producto)
         self.root.wait_window(ventana.window)
