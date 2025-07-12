@@ -166,7 +166,7 @@ class ModernProductDetailWindow:
 
         # Contenido del header
         header_content = tk.Frame(header_frame, bg=self.colors['primary'])
-        header_content.pack(fill=tk.BOTH, expand=True, padx=30, pady=15)
+        header_content.pack(fill=tk.BOTH, expand=True, padx=50, pady=10)
 
         # Icono y título
         icon_label = tk.Label(header_content, text="📋", font=('Segoe UI', 28),

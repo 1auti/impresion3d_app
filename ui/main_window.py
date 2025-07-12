@@ -87,7 +87,7 @@ class ModernMainWindow:
 
         # Contenedor principal con grid
         content_frame = tk.Frame(self.main_container, bg=self.styles.colors['bg'])
-        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=30, pady=5)
 
         # Configurar grid
         content_frame.grid_columnconfigure(1, weight=1)

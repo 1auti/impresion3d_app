@@ -29,9 +29,7 @@ def main():
         app = ModernMainWindow(root)
         root.mainloop()
 
-        # ✅ OPCIÓN 2: Usar función helper (alternativa)
-        # root, app = create_application()
-        # root.mainloop()
+
 
     except ImportError as e:
         error_msg = f"Error de importación: {str(e)}\n\nVerifica que todos los módulos estén disponibles."

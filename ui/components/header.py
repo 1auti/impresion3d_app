@@ -24,7 +24,7 @@ class HeaderComponent:
 
         # Contenido del header
         header_content = tk.Frame(self.header_frame, bg=self.colors['primary'])
-        header_content.pack(fill=tk.BOTH, expand=True, padx=30, pady=15)
+        header_content.pack(fill=tk.BOTH, expand=True, padx=30, pady=10)
 
         # Logo y título
         self._create_logo_section(header_content)
@@ -33,26 +33,37 @@ class HeaderComponent:
         self._create_buttons_section(header_content)
 
     def _create_logo_section(self, parent):
-        """Crear sección del logo y título"""
+        """Crear sección del logo y título - SOLUCIÓN SIMPLE"""
         logo_frame = tk.Frame(parent, bg=self.colors['primary'])
-        logo_frame.pack(side=tk.LEFT)
+        logo_frame.pack(side=tk.LEFT, anchor='center')  # ✅ Centrado vertical
 
-        # Icono con emoji
-        icon_label = tk.Label(logo_frame, text="🎯", font=('Segoe UI', 32),
+        # Frame horizontal para icono + textos
+        horizontal_container = tk.Frame(logo_frame, bg=self.colors['primary'])
+        horizontal_container.pack(anchor='center', pady=10)  # ✅ Centrado con padding
+
+        # Icono
+        icon_label = tk.Label(horizontal_container, text="🎯",
+                              font=('Segoe UI', 24),  # ✅ Tamaño proporcionado
                               bg=self.colors['primary'], fg='white')
-        icon_label.pack(side=tk.LEFT, padx=(0, 15))
+        icon_label.pack(side=tk.LEFT, padx=(0, 12))
 
-        # Título
-        title_label = tk.Label(logo_frame, text="3D Print Manager",
-                               font=('Segoe UI', 24, 'bold'),
+        # Frame vertical SOLO para los textos
+        text_container = tk.Frame(horizontal_container, bg=self.colors['primary'])
+        text_container.pack(side=tk.LEFT, anchor='center')  # ✅ Centrado vertical
+
+        # Título principal
+        title_label = tk.Label(text_container, text="3D Print Manager",
+                               font=('Segoe UI', 18, 'bold'),  # ✅ Tamaño ajustado
                                bg=self.colors['primary'], fg='white')
-        title_label.pack(side=tk.LEFT)
+        title_label.pack(anchor='w')  # ✅ Alineado a la izquierda del contenedor
 
-        # Subtítulo
-        subtitle_label = tk.Label(logo_frame, text="Sistema de Gestión de Impresiones 3D",
-                                  font=('Segoe UI', 10),
-                                  bg=self.colors['primary'], fg='white')
-        subtitle_label.place(x=60, y=35)
+        # Subtítulo en línea separada
+        subtitle_label = tk.Label(text_container,
+                                  text="Sistema de Gestión de Impresiones 3D",
+                                  font=('Segoe UI', 8),  # ✅ Más pequeño para mejor proporción
+                                  bg=self.colors['primary'],
+                                  fg='white')  # ✅ Color sólido, no rgba
+        subtitle_label.pack(anchor='w', pady=(0, 2))  # ✅ Pequeño padding inferior
 
     def _create_buttons_section(self, parent):
         """Crear sección de botones del header"""
