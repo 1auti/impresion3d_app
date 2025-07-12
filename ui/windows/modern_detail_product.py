@@ -78,58 +78,58 @@ class ModernProductDetailWindow:
 
         # Estilo para frames
         style.configure('Modern.TFrame',
-                       background=self.colors['card'],
-                       relief='flat',
-                       borderwidth=1)
+                        background=self.colors['card'],
+                        relief='flat',
+                        borderwidth=1)
 
         style.configure('Card.TFrame',
-                       background=self.colors['card'],
-                       relief='flat',
-                       borderwidth=0)
+                        background=self.colors['card'],
+                        relief='flat',
+                        borderwidth=0)
 
         # Estilo para labels
         style.configure('Title.TLabel',
-                       background=self.colors['card'],
-                       foreground=self.colors['text'],
-                       font=self.fonts['title'])
+                        background=self.colors['card'],
+                        foreground=self.colors['text'],
+                        font=self.fonts['title'])
 
         style.configure('Heading.TLabel',
-                       background=self.colors['card'],
-                       foreground=self.colors['text'],
-                       font=self.fonts['heading'])
+                        background=self.colors['card'],
+                        foreground=self.colors['text'],
+                        font=self.fonts['heading'])
 
         style.configure('Body.TLabel',
-                       background=self.colors['card'],
-                       foreground=self.colors['text'],
-                       font=self.fonts['body'])
+                        background=self.colors['card'],
+                        foreground=self.colors['text'],
+                        font=self.fonts['body'])
 
         style.configure('Caption.TLabel',
-                       background=self.colors['card'],
-                       foreground=self.colors['text_secondary'],
-                       font=self.fonts['caption'])
+                        background=self.colors['card'],
+                        foreground=self.colors['text_secondary'],
+                        font=self.fonts['caption'])
 
         # Estilo para botones
         style.configure('Primary.TButton',
-                       font=self.fonts['body'],
-                       borderwidth=0,
-                       relief='flat',
-                       background=self.colors['primary'],
-                       foreground='white',
-                       padding=(15, 10))
+                        font=self.fonts['body'],
+                        borderwidth=0,
+                        relief='flat',
+                        background=self.colors['primary'],
+                        foreground='white',
+                        padding=(15, 10))
 
         style.map('Primary.TButton',
-                 background=[('active', self.colors['primary_hover'])])
+                  background=[('active', self.colors['primary_hover'])])
 
         style.configure('Secondary.TButton',
-                       font=self.fonts['body'],
-                       borderwidth=1,
-                       relief='flat',
-                       background=self.colors['card'],
-                       foreground=self.colors['text'],
-                       padding=(15, 10))
+                        font=self.fonts['body'],
+                        borderwidth=1,
+                        relief='flat',
+                        background=self.colors['card'],
+                        foreground=self.colors['text'],
+                        padding=(15, 10))
 
         style.map('Secondary.TButton',
-                 background=[('active', self.colors['accent'])])
+                  background=[('active', self.colors['accent'])])
 
     def create_modern_widgets(self):
         """Crear interfaz moderna"""
@@ -170,20 +170,20 @@ class ModernProductDetailWindow:
 
         # Icono y título
         icon_label = tk.Label(header_content, text="📋", font=('Segoe UI', 28),
-                             bg=self.colors['primary'], fg='white')
+                              bg=self.colors['primary'], fg='white')
         icon_label.pack(side=tk.LEFT, padx=(0, 15))
 
         title_info = tk.Frame(header_content, bg=self.colors['primary'])
         title_info.pack(side=tk.LEFT, fill=tk.Y)
 
         title_label = tk.Label(title_info, text=self.producto.nombre,
-                              font=self.fonts['title'],
-                              bg=self.colors['primary'], fg='white')
+                               font=self.fonts['title'],
+                               bg=self.colors['primary'], fg='white')
         title_label.pack(anchor=tk.W)
 
         subtitle_label = tk.Label(title_info, text=f"ID: {self.producto.id} • {self.producto.material}",
-                                 font=self.fonts['body'],
-                                 bg=self.colors['primary'], fg='white')
+                                  font=self.fonts['body'],
+                                  bg=self.colors['primary'], fg='white')
         subtitle_label.pack(anchor=tk.W)
 
         # Estado/badges
@@ -202,9 +202,9 @@ class ModernProductDetailWindow:
         content.pack(padx=10, pady=5)
 
         tk.Label(content, text=icon, font=self.fonts['body'],
-                bg='white', fg=self.colors['primary']).pack(side=tk.LEFT, padx=(0, 5))
+                 bg='white', fg=self.colors['primary']).pack(side=tk.LEFT, padx=(0, 5))
         tk.Label(content, text=text, font=self.fonts['small'],
-                bg='white', fg=self.colors['text']).pack(side=tk.LEFT)
+                 bg='white', fg=self.colors['text']).pack(side=tk.LEFT)
 
     def create_left_panel(self, parent):
         """Crear panel izquierdo"""
@@ -223,8 +223,8 @@ class ModernProductDetailWindow:
     def create_image_card(self, parent):
         """Crear tarjeta de imagen"""
         image_card = tk.Frame(parent, bg=self.colors['card'],
-                             highlightbackground=self.colors['border'],
-                             highlightthickness=1)
+                              highlightbackground=self.colors['border'],
+                              highlightthickness=1)
         image_card.pack(fill=tk.X, pady=(0, 20))
 
         # Header de la tarjeta
@@ -232,17 +232,17 @@ class ModernProductDetailWindow:
         header.pack(fill=tk.X, padx=20, pady=(15, 10))
 
         tk.Label(header, text="🖼️ Imagen del Producto",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
 
         # Contenedor de imagen
         image_container = tk.Frame(image_card, bg=self.colors['accent'])
         image_container.pack(fill=tk.X, padx=20, pady=(0, 15))
 
         self.image_label = tk.Label(image_container, text="📷 Sin imagen disponible",
-                                   font=self.fonts['body'],
-                                   bg=self.colors['accent'], fg=self.colors['text_secondary'],
-                                   height=12)
+                                    font=self.fonts['body'],
+                                    bg=self.colors['accent'], fg=self.colors['text_secondary'],
+                                    height=12)
         self.image_label.pack(fill=tk.BOTH, padx=20, pady=20)
 
         # Botón para ver imagen completa
@@ -257,8 +257,8 @@ class ModernProductDetailWindow:
     def create_basic_info_card(self, parent):
         """Crear tarjeta de información básica"""
         info_card = tk.Frame(parent, bg=self.colors['card'],
-                            highlightbackground=self.colors['border'],
-                            highlightthickness=1)
+                             highlightbackground=self.colors['border'],
+                             highlightthickness=1)
         info_card.pack(fill=tk.X, pady=(0, 20))
 
         # Header
@@ -266,8 +266,8 @@ class ModernProductDetailWindow:
         header.pack(fill=tk.X, padx=20, pady=(15, 10))
 
         tk.Label(header, text="ℹ️ Información Básica",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
 
         # Contenido
         content = tk.Frame(info_card, bg=self.colors['card'])
@@ -279,7 +279,8 @@ class ModernProductDetailWindow:
             ('🔧 Material:', self.producto.material),
             ('⚖️ Peso Total:', f"{self.producto.get_peso_total()} gramos"),
             ('⏱️ Tiempo Base:', f"{self.producto.tiempo_impresion} min"),
-            ('🎨 Colores:', f"{len(self.producto.colores_especificaciones)} colores" if self.producto.colores_especificaciones else "Sin especificar"),
+            ('🎨 Colores:',
+             f"{len(self.producto.colores_especificaciones)} colores" if self.producto.colores_especificaciones else "Sin especificar"),
             ('🌡️ Temp. Extrusor:', f"{self.producto.temperatura_extrusor}°C"),
             ('🌡️ Temp. Cama:', f"{self.producto.temperatura_cama}°C"),
         ]
@@ -294,16 +295,16 @@ class ModernProductDetailWindow:
 
         # Label
         label = tk.Label(row_frame, text=label_text,
-                        font=self.fonts['body'],
-                        bg=self.colors['card'], fg=self.colors['text_secondary'],
-                        width=15, anchor='w')
+                         font=self.fonts['body'],
+                         bg=self.colors['card'], fg=self.colors['text_secondary'],
+                         width=15, anchor='w')
         label.pack(side=tk.LEFT)
 
         # Valor
         value_label = tk.Label(row_frame, text=value,
-                              font=self.fonts['body'],
-                              bg=self.colors['card'], fg=self.colors['text'],
-                              anchor='w')
+                               font=self.fonts['body'],
+                               bg=self.colors['card'], fg=self.colors['text'],
+                               anchor='w')
         value_label.pack(side=tk.LEFT, padx=(10, 0), fill=tk.X, expand=True)
 
         self.info_labels[label_text] = value_label
@@ -311,28 +312,28 @@ class ModernProductDetailWindow:
     def create_dates_card(self, parent):
         """Crear tarjeta de fechas"""
         dates_card = tk.Frame(parent, bg=self.colors['card'],
-                             highlightbackground=self.colors['border'],
-                             highlightthickness=1)
+                              highlightbackground=self.colors['border'],
+                              highlightthickness=1)
         dates_card.pack(fill=tk.X)
 
         content = tk.Frame(dates_card, bg=self.colors['card'])
         content.pack(fill=tk.X, padx=20, pady=15)
 
         tk.Label(content, text="📅 Fechas",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 10))
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 10))
 
         if self.producto.fecha_creacion:
             tk.Label(content,
-                    text=f"Creado: {self.producto.fecha_creacion.strftime('%d/%m/%Y %H:%M')}",
-                    font=self.fonts['small'],
-                    bg=self.colors['card'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
+                     text=f"Creado: {self.producto.fecha_creacion.strftime('%d/%m/%Y %H:%M')}",
+                     font=self.fonts['small'],
+                     bg=self.colors['card'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
 
         if self.producto.fecha_modificacion:
             tk.Label(content,
-                    text=f"Modificado: {self.producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M')}",
-                    font=self.fonts['small'],
-                    bg=self.colors['card'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
+                     text=f"Modificado: {self.producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M')}",
+                     font=self.fonts['small'],
+                     bg=self.colors['card'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
 
     def create_right_panel(self, parent):
         """Crear panel derecho"""
@@ -348,8 +349,8 @@ class ModernProductDetailWindow:
     def create_color_specifications_card(self, parent):
         """Crear tarjeta de especificaciones de color"""
         color_card = tk.Frame(parent, bg=self.colors['card'],
-                             highlightbackground=self.colors['border'],
-                             highlightthickness=1)
+                              highlightbackground=self.colors['border'],
+                              highlightthickness=1)
         color_card.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
 
         # Header
@@ -357,13 +358,13 @@ class ModernProductDetailWindow:
         header.pack(fill=tk.X, padx=20, pady=(15, 10))
 
         tk.Label(header, text="🎨 Especificaciones de Color",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
 
         # Contenido con scroll
         if self.producto.colores_especificaciones:
             canvas = tk.Canvas(color_card, bg=self.colors['card'], height=400,
-                              highlightthickness=0)
+                               highlightthickness=0)
             scrollbar = ttk.Scrollbar(color_card, orient="vertical", command=canvas.yview)
             scrollable_frame = tk.Frame(canvas, bg=self.colors['card'])
 
@@ -386,11 +387,11 @@ class ModernProductDetailWindow:
             no_colors.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
             tk.Label(no_colors, text="🎨",
-                    font=('Segoe UI', 32),
-                    bg=self.colors['card'], fg=self.colors['text_secondary']).pack(pady=(20, 10))
+                     font=('Segoe UI', 32),
+                     bg=self.colors['card'], fg=self.colors['text_secondary']).pack(pady=(20, 10))
             tk.Label(no_colors, text="No hay especificaciones de color definidas",
-                    font=self.fonts['body'],
-                    bg=self.colors['card'], fg=self.colors['text_secondary']).pack()
+                     font=self.fonts['body'],
+                     bg=self.colors['card'], fg=self.colors['text_secondary']).pack()
 
     def create_color_groups(self, parent):
         """Crear grupos de color"""
@@ -417,8 +418,8 @@ class ModernProductDetailWindow:
     def create_color_group_widget(self, parent, color_hex, group, index):
         """Crear widget de grupo de color"""
         group_frame = tk.Frame(parent, bg=self.colors['accent'],
-                              highlightbackground=self.colors['border'],
-                              highlightthickness=1)
+                               highlightbackground=self.colors['border'],
+                               highlightthickness=1)
         group_frame.pack(fill=tk.X, padx=5, pady=10)
 
         # Header del grupo
@@ -427,8 +428,8 @@ class ModernProductDetailWindow:
 
         # Muestra de color
         color_sample = tk.Frame(header, bg=color_hex, width=40, height=40,
-                               highlightbackground=self.colors['border'],
-                               highlightthickness=1)
+                                highlightbackground=self.colors['border'],
+                                highlightthickness=1)
         color_sample.pack(side=tk.LEFT, padx=(0, 15))
         color_sample.pack_propagate(False)
 
@@ -437,25 +438,25 @@ class ModernProductDetailWindow:
         info_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         tk.Label(info_frame, text=f"{group['nombre'] or 'Sin nombre'}",
-                font=self.fonts['subheading'],
-                bg=self.colors['accent'], fg=self.colors['text']).pack(anchor=tk.W)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['accent'], fg=self.colors['text']).pack(anchor=tk.W)
 
         tk.Label(info_frame, text=f"{color_hex} • {group['peso_total']:.1f}g",
-                font=self.fonts['small'],
-                bg=self.colors['accent'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
+                 font=self.fonts['small'],
+                 bg=self.colors['accent'], fg=self.colors['text_secondary']).pack(anchor=tk.W)
 
         if group['tiempo_adicional'] > 0:
             tk.Label(info_frame, text=f"⏱️ +{group['tiempo_adicional']} min (cambio de color)",
-                    font=self.fonts['caption'],
-                    bg=self.colors['accent'], fg=self.colors['warning']).pack(anchor=tk.W)
+                     font=self.fonts['caption'],
+                     bg=self.colors['accent'], fg=self.colors['warning']).pack(anchor=tk.W)
 
         # Lista de piezas
         piezas_frame = tk.Frame(group_frame, bg=self.colors['accent'])
         piezas_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         tk.Label(piezas_frame, text="Piezas:",
-                font=self.fonts['body'],
-                bg=self.colors['accent'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 5))
+                 font=self.fonts['body'],
+                 bg=self.colors['accent'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 5))
 
         # Mostrar piezas en formato de chips
         chips_frame = tk.Frame(piezas_frame, bg=self.colors['accent'])
@@ -463,19 +464,19 @@ class ModernProductDetailWindow:
 
         for pieza in group['piezas'][:8]:  # Mostrar máximo 8 piezas
             chip = tk.Label(chips_frame, text=pieza,
-                           font=self.fonts['caption'],
-                           bg=self.colors['card'], fg=self.colors['text'],
-                           padx=8, pady=2,
-                           relief=tk.FLAT,
-                           highlightbackground=self.colors['border'],
-                           highlightthickness=1)
+                            font=self.fonts['caption'],
+                            bg=self.colors['card'], fg=self.colors['text'],
+                            padx=8, pady=2,
+                            relief=tk.FLAT,
+                            highlightbackground=self.colors['border'],
+                            highlightthickness=1)
             chip.pack(side=tk.LEFT, padx=3, pady=2)
 
         if len(group['piezas']) > 8:
             tk.Label(chips_frame, text=f"+{len(group['piezas']) - 8} más",
-                    font=self.fonts['caption'],
-                    bg=self.colors['text_secondary'], fg='white',
-                    padx=8, pady=2).pack(side=tk.LEFT, padx=3, pady=2)
+                     font=self.fonts['caption'],
+                     bg=self.colors['text_secondary'], fg='white',
+                     padx=8, pady=2).pack(side=tk.LEFT, padx=3, pady=2)
 
     def create_color_summary(self, parent, color_groups):
         """Crear resumen de colores"""
@@ -483,8 +484,8 @@ class ModernProductDetailWindow:
         summary_frame.pack(fill=tk.X, pady=(20, 10))
 
         tk.Label(summary_frame, text="📊 Resumen Total",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(pady=(0, 10))
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(pady=(0, 10))
 
         total_colores = len(color_groups)
         total_piezas = sum(len(g['piezas']) for g in color_groups.values())
@@ -496,15 +497,15 @@ class ModernProductDetailWindow:
             summary_text += f"• +{tiempo_cambios} min por cambios de color"
 
         tk.Label(summary_frame, text=summary_text,
-                font=self.fonts['body'],
-                bg=self.colors['card'], fg=self.colors['text'],
-                justify=tk.LEFT).pack(anchor=tk.W)
+                 font=self.fonts['body'],
+                 bg=self.colors['card'], fg=self.colors['text'],
+                 justify=tk.LEFT).pack(anchor=tk.W)
 
     def create_recommendations_card(self, parent):
         """Crear tarjeta de recomendaciones"""
         rec_card = tk.Frame(parent, bg=self.colors['card'],
-                           highlightbackground=self.colors['border'],
-                           highlightthickness=1)
+                            highlightbackground=self.colors['border'],
+                            highlightthickness=1)
         rec_card.pack(fill=tk.X)
 
         # Header
@@ -512,8 +513,8 @@ class ModernProductDetailWindow:
         header.pack(fill=tk.X, padx=20, pady=(15, 10))
 
         tk.Label(header, text="💡 Recomendaciones",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
 
         # Contenido
         content = tk.Frame(rec_card, bg=self.colors['card'])
@@ -525,13 +526,13 @@ class ModernProductDetailWindow:
             rec_frame.pack(fill=tk.X, pady=3)
 
             tk.Label(rec_frame, text="•",
-                    font=self.fonts['body'],
-                    bg=self.colors['accent'], fg=self.colors['primary']).pack(side=tk.LEFT, padx=(10, 5), pady=8)
+                     font=self.fonts['body'],
+                     bg=self.colors['accent'], fg=self.colors['primary']).pack(side=tk.LEFT, padx=(10, 5), pady=8)
 
             tk.Label(rec_frame, text=rec,
-                    font=self.fonts['small'],
-                    bg=self.colors['accent'], fg=self.colors['text'],
-                    wraplength=280, justify=tk.LEFT).pack(side=tk.LEFT, padx=(0, 10), pady=5)
+                     font=self.fonts['small'],
+                     bg=self.colors['accent'], fg=self.colors['text'],
+                     wraplength=280, justify=tk.LEFT).pack(side=tk.LEFT, padx=(0, 10), pady=5)
 
     def create_bottom_panel(self, parent):
         """Crear panel inferior"""
@@ -551,8 +552,8 @@ class ModernProductDetailWindow:
     def create_guide_card(self, parent):
         """Crear tarjeta de guía"""
         guide_card = tk.Frame(parent, bg=self.colors['card'],
-                             highlightbackground=self.colors['border'],
-                             highlightthickness=1)
+                              highlightbackground=self.colors['border'],
+                              highlightthickness=1)
         guide_card.grid(row=0, column=0, sticky='nsew', padx=(0, 20))
 
         # Header
@@ -560,8 +561,8 @@ class ModernProductDetailWindow:
         header.pack(fill=tk.X, padx=20, pady=(15, 10))
 
         tk.Label(header, text="📖 Guía de Impresión",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
 
         # ScrolledText moderno
         self.guide_text = scrolledtext.ScrolledText(
@@ -578,16 +579,16 @@ class ModernProductDetailWindow:
     def create_actions_panel(self, parent):
         """Crear panel de acciones"""
         actions_card = tk.Frame(parent, bg=self.colors['card'],
-                               highlightbackground=self.colors['border'],
-                               highlightthickness=1)
+                                highlightbackground=self.colors['border'],
+                                highlightthickness=1)
         actions_card.grid(row=0, column=1, sticky='nsew')
 
         content = tk.Frame(actions_card, bg=self.colors['card'])
         content.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         tk.Label(content, text="⚡ Acciones Rápidas",
-                font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack(pady=(0, 20))
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(pady=(0, 20))
 
         # Botones de acción
         btn_copy = self.create_modern_button(content, "📑 Copiar Guía", self.copiar_guia, 'secondary')
@@ -614,13 +615,13 @@ class ModernProductDetailWindow:
         bg, fg, hover = colors.get(style, colors['secondary'])
 
         btn_frame = tk.Frame(parent, bg=bg,
-                            highlightbackground=self.colors['border'],
-                            highlightthickness=1 if style == 'secondary' else 0)
+                             highlightbackground=self.colors['border'],
+                             highlightthickness=1 if style == 'secondary' else 0)
 
         btn = tk.Button(btn_frame, text=text, command=command,
-                       font=self.fonts['body'], bg=bg, fg=fg,
-                       bd=0, padx=20, pady=12, cursor='hand2',
-                       activebackground=hover, activeforeground=fg)
+                        font=self.fonts['body'], bg=bg, fg=fg,
+                        bd=0, padx=20, pady=12, cursor='hand2',
+                        activebackground=hover, activeforeground=fg)
         btn.pack(fill=tk.BOTH)
 
         # Efectos hover
@@ -776,7 +777,7 @@ class ModernProductDetailWindow:
             padding: 0;
             box-sizing: border-box;
         }}
-        
+
         body {{
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
@@ -784,7 +785,7 @@ class ModernProductDetailWindow:
             background: #F8FAFC;
             padding: 20px;
         }}
-        
+
         .container {{
             max-width: 800px;
             margin: 0 auto;
@@ -793,29 +794,29 @@ class ModernProductDetailWindow:
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }}
-        
+
         .header {{
             background: linear-gradient(135deg, #6366F1, #EC4899);
             color: white;
             padding: 30px;
             text-align: center;
         }}
-        
+
         .header h1 {{
             font-size: 2.5em;
             margin-bottom: 10px;
             font-weight: 700;
         }}
-        
+
         .header .subtitle {{
             font-size: 1.1em;
             opacity: 0.9;
         }}
-        
+
         .content {{
             padding: 30px;
         }}
-        
+
         .section {{
             margin-bottom: 30px;
             padding: 20px;
@@ -823,7 +824,7 @@ class ModernProductDetailWindow:
             border-radius: 8px;
             border-left: 4px solid #6366F1;
         }}
-        
+
         .section h2 {{
             color: #6366F1;
             font-size: 1.4em;
@@ -832,34 +833,34 @@ class ModernProductDetailWindow:
             align-items: center;
             gap: 10px;
         }}
-        
+
         .info-grid {{
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
             margin-bottom: 20px;
         }}
-        
+
         .info-item {{
             background: white;
             padding: 15px;
             border-radius: 6px;
             border: 1px solid #E2E8F0;
         }}
-        
+
         .info-label {{
             font-weight: 600;
             color: #64748B;
             font-size: 0.9em;
             margin-bottom: 5px;
         }}
-        
+
         .info-value {{
             font-size: 1.1em;
             color: #1E293B;
             font-weight: 500;
         }}
-        
+
         .color-spec {{
             background: white;
             border: 1px solid #E2E8F0;
@@ -867,38 +868,38 @@ class ModernProductDetailWindow:
             padding: 15px;
             margin-bottom: 15px;
         }}
-        
+
         .color-header {{
             display: flex;
             align-items: center;
             gap: 15px;
             margin-bottom: 10px;
         }}
-        
+
         .color-sample {{
             width: 30px;
             height: 30px;
             border-radius: 6px;
             border: 2px solid #E2E8F0;
         }}
-        
+
         .color-info h3 {{
             font-size: 1.1em;
             margin-bottom: 5px;
         }}
-        
+
         .color-meta {{
             color: #64748B;
             font-size: 0.9em;
         }}
-        
+
         .pieces {{
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-top: 10px;
         }}
-        
+
         .piece {{
             background: #F1F5F9;
             padding: 4px 8px;
@@ -906,7 +907,7 @@ class ModernProductDetailWindow:
             font-size: 0.85em;
             color: #475569;
         }}
-        
+
         .guide {{
             white-space: pre-wrap;
             background: #F8FAFC;
@@ -917,7 +918,7 @@ class ModernProductDetailWindow:
             font-size: 0.95em;
             line-height: 1.5;
         }}
-        
+
         .footer {{
             text-align: center;
             padding: 20px;
@@ -925,7 +926,7 @@ class ModernProductDetailWindow:
             border-top: 1px solid #E2E8F0;
             font-size: 0.9em;
         }}
-        
+
         .badges {{
             display: flex;
             gap: 10px;
@@ -933,7 +934,7 @@ class ModernProductDetailWindow:
             margin-top: 15px;
             flex-wrap: wrap;
         }}
-        
+
         .badge {{
             background: rgba(255, 255, 255, 0.2);
             padding: 8px 15px;
@@ -941,7 +942,7 @@ class ModernProductDetailWindow:
             font-size: 0.9em;
             font-weight: 500;
         }}
-        
+
         @media print {{
             body {{ background: white; padding: 0; }}
             .container {{ box-shadow: none; }}
@@ -961,7 +962,7 @@ class ModernProductDetailWindow:
                 <span class="badge">⏱️ {self.producto.tiempo_impresion_formato()}</span>
             </div>
         </div>
-        
+
         <div class="content">
             <div class="section">
                 <h2>ℹ️ Información Básica</h2>
@@ -984,7 +985,7 @@ class ModernProductDetailWindow:
                     </div>
                 </div>
             </div>
-            
+
             <div class="section">
                 <h2>⚙️ Configuración de Impresión</h2>
                 <div class="info-grid">
@@ -1060,7 +1061,7 @@ class ModernProductDetailWindow:
                 <div class="guide">{self.producto.guia_impresion or 'No hay guía disponible'}</div>
             </div>
         </div>
-        
+
         <div class="footer">
             <p>Generado el {self.producto.fecha_creacion.strftime('%d/%m/%Y %H:%M') if self.producto.fecha_creacion else 'N/A'}</p>
             <p>Última modificación: {self.producto.fecha_modificacion.strftime('%d/%m/%Y %H:%M') if self.producto.fecha_modificacion else 'N/A'}</p>
@@ -1076,8 +1077,8 @@ class ModernProductDetailWindow:
 
             webbrowser.open(str(temp_path.absolute()))
             self.show_modern_message("Éxito",
-                                   "Documento generado y abierto en el navegador.\nUsa Ctrl+P (o Cmd+P en Mac) para imprimir.",
-                                   'success')
+                                     "Documento generado y abierto en el navegador.\nUsa Ctrl+P (o Cmd+P en Mac) para imprimir.",
+                                     'success')
 
         except Exception as e:
             self.show_modern_message("Error", f"Error al generar documento: {str(e)}", 'error')
@@ -1108,16 +1109,16 @@ class ModernProductDetailWindow:
 
         # Icono
         tk.Label(content, text=icon, font=('Segoe UI', 32),
-                bg=self.colors['card'], fg=color).pack(pady=(0, 15))
+                 bg=self.colors['card'], fg=color).pack(pady=(0, 15))
 
         # Título
         tk.Label(content, text=title, font=self.fonts['subheading'],
-                bg=self.colors['card'], fg=self.colors['text']).pack()
+                 bg=self.colors['card'], fg=self.colors['text']).pack()
 
         # Mensaje
         tk.Label(content, text=message, font=self.fonts['body'],
-                bg=self.colors['card'], fg=self.colors['text_secondary'],
-                wraplength=340, justify=tk.CENTER).pack(pady=(10, 20))
+                 bg=self.colors['card'], fg=self.colors['text_secondary'],
+                 wraplength=340, justify=tk.CENTER).pack(pady=(10, 20))
 
         # Botón
         btn = self.create_modern_button(content, "Aceptar", msg_window.destroy, 'primary')

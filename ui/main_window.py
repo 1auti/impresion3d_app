@@ -19,8 +19,8 @@ from .controllers.product_controller import ProductController
 # Importar otros módulos necesarios
 from database.db_manager import DatabaseManager
 from ui.windows.modern_add_product import ModernAddProductWindow
-from ui.edit_product_window import ModernEditProductWindowRefactored
-from ui.product_detail_window import ModernProductDetailWindow
+from ui.windows.modern_edit_product import ModernEditProductWindowRefactored
+from ui.windows.modern_detail_product import ModernProductDetailWindow
 
 
 class ModernMainWindow:
