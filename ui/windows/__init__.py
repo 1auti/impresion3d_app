@@ -11,16 +11,16 @@ from .modern_add_product import ModernAddProductWindow
 from .modern_edit_product import ModernEditProductWindowRefactored
 
 # Exportamos para que sea mas facil de implementar
-_all_ = [
+__all__ = [
     "ModernProductDetailWindow",
-    "ModernAddProductWindows",
+    "ModernAddProductWindow",
     "ModernEditProductWindowRefactored"
 ]
 
 # Funcion para verificar que todas las ventanas estan disponibles
 def get_availiable_windows():
     """ Retorna lista de ventanas disponibles"""
-    return _all_
+    return __all__
 
 # Funcion de ayuda para implementar dinamicamente
 def get_windows_class(windows_name):
