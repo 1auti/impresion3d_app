@@ -13,6 +13,7 @@ from ui.components.base import ModernFrame, ModernField, ModernButton, Scrollabl
 from config.styles import ModernTheme
 from ui.state.form_state import FormStateManager, ImageStateManager, GuideStateManager
 from utils.file_utils import FileUtils
+from ui.components.color_widgets.color_specification_widget import ModernColorSpecificationWidget
 
 
 class BaseTab:
@@ -325,9 +326,35 @@ class ColorsTab(BaseTab):
 
     def _add_color_specification(self):
         """Agregar nueva especificación de color"""
-        # Aquí iría la lógica para agregar especificación
-        # Depende de ModernColorFilterWidget que no está en el código base
-        pass
+        index = len(self.color_specifications)
+
+        # Crear widget de especificación (no filtro)
+        color_widget = ModernColorSpecificationWidget(
+            self.colors_frame,
+            color_spec=None,  # Nueva especificación vacía
+            index=index,
+            on_delete=self._eliminar_especificacion_color,  # ← Corregir nombre del método
+            colors=self.theme.colors,  # ← Usar theme.colors
+            fonts=self.theme.fonts  # ← Usar theme.fonts
+        )
+
+        color_widget.pack(fill=tk.X, pady=10)
+        self.color_specifications.append(color_widget)
+
+    def delate_color_specificacion_widget(self,index):
+        """Eliminar especificación de color"""
+        if len(self.color_specifications) > 1:
+            widget = self.color_specifications[index]
+            widget.destroy()
+            del self.color_specifications[index]
+
+            # Reindexar los widgets restantes
+            for i, widget in enumerate(self.color_specifications):
+                widget.index = i
+        else:
+            # Mostrar mensaje de advertencia
+            # Aquí podrías usar tu sistema de notificaciones
+            print("Debe mantener al menos una especificación de color")
 
     def _load_existing_specifications(self):
         """Cargar especificaciones existentes"""
@@ -335,23 +362,38 @@ class ColorsTab(BaseTab):
             for color_spec in self.producto.colores_especificaciones:
                 self._add_color_specification_widget(color_spec)
         else:
+            # Agregar una especificación vacía por defecto
             self._add_color_specification_widget()
 
     def _add_color_specification_widget(self, color_spec=None):
         """Agregar widget de especificación de color"""
-        # Implementación simplificada - en el código real usaría ModernColorFilterWidget
-        spec_frame = ModernFrame(self.colors_frame, self.theme, card_style=True)
-        spec_frame.pack(fill=tk.X, pady=10)
+        index = len(self.color_specifications)
 
-        tk.Label(
-            spec_frame,
-            text=f"Especificación de Color {len(self.color_specifications) + 1}",
-            font=self.theme.fonts['body'],
-            bg=self.theme.colors['card'],
-            fg=self.theme.colors['text']
-        ).pack(padx=20, pady=15)
+        color_widget = ModernColorSpecificationWidget(
+            self.colors_frame,
+            color_spec=color_spec,  # Especificación existente o None para nueva
+            index=index,
+            on_delete=self._eliminar_especificacion_color,
+            colors=self.theme.colors,
+            fonts=self.theme.fonts
+        )
 
-        self.color_specifications.append(spec_frame)
+        color_widget.pack(fill=tk.X, pady=10)
+        self.color_specifications.append(color_widget)
+
+    def get_color_specifications(self):
+        """Obtener todas las especificaciones de color válidas"""
+        specs = []
+        for widget in self.color_specifications:
+            try:
+                widget_specs = widget.get_all_specifications()
+                for spec in widget_specs:
+                    if hasattr(spec, 'peso_color') and spec.peso_color > 0:
+                        specs.append(spec)
+            except AttributeError:
+                # Si el widget no tiene get_all_specifications, continuar
+                continue
+        return specs
 
 
 class ConfigTab(BaseTab):
