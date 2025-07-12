@@ -1,5 +1,5 @@
 """
-Validador para productos y formularios
+Validador para productos y formularios - CORREGIDO
 """
 from typing import Dict, List, Tuple, Any
 from dataclasses import dataclass
@@ -144,7 +144,7 @@ class ProductValidator:
 
     @staticmethod
     def validate_color_specifications(color_specs: List) -> ValidationResult:
-        """Validar especificaciones de color"""
+        """Validar especificaciones de color - CORREGIDO"""
         errors = []
         warnings = []
 
@@ -153,40 +153,49 @@ class ProductValidator:
             return ValidationResult(is_valid=False, errors=errors, warnings=warnings)
 
         total_peso = 0.0
-        nombres_utilizados = set()
         colores_utilizados = set()
 
         for i, spec in enumerate(color_specs):
-            # Validar nombre de pieza
-            if not spec.nombre_pieza or not spec.nombre_pieza.strip():
-                errors.append(f"Especificación {i + 1}: El nombre de la pieza es requerido")
-            elif spec.nombre_pieza.strip() in nombres_utilizados:
-                warnings.append(f"Especificación {i + 1}: Nombre de pieza duplicado")
+            spec_index = i + 1
+
+            # Validar que el objeto tenga los atributos necesarios
+            if not hasattr(spec, 'piezas') or not hasattr(spec, 'peso_color') or not hasattr(spec, 'color_hex'):
+                errors.append(f"Especificación {spec_index}: Datos incompletos")
+                continue
+
+            # Validar piezas (es una lista)
+            if not spec.piezas or not isinstance(spec.piezas, list):
+                errors.append(f"Especificación {spec_index}: Debe tener al menos una pieza")
             else:
-                nombres_utilizados.add(spec.nombre_pieza.strip())
+                # Validar que las piezas tengan nombres válidos
+                piezas_validas = [p for p in spec.piezas if p and p.strip()]
+                if not piezas_validas:
+                    errors.append(f"Especificación {spec_index}: Todas las piezas deben tener nombres válidos")
+                elif len(piezas_validas) != len(spec.piezas):
+                    warnings.append(f"Especificación {spec_index}: Algunas piezas tienen nombres vacíos")
 
             # Validar peso
             try:
                 peso = float(spec.peso_color)
                 if peso <= 0:
-                    errors.append(f"Especificación {i + 1}: El peso debe ser mayor a 0")
+                    errors.append(f"Especificación {spec_index}: El peso debe ser mayor a 0")
                 elif peso > 5000:
-                    warnings.append(f"Especificación {i + 1}: Peso muy alto para una pieza individual")
+                    warnings.append(f"Especificación {spec_index}: Peso muy alto para una especificación individual")
                 total_peso += peso
             except (ValueError, TypeError):
-                errors.append(f"Especificación {i + 1}: El peso debe ser un número válido")
+                errors.append(f"Especificación {spec_index}: El peso debe ser un número válido")
 
             # Validar color
             if not spec.color_hex:
-                errors.append(f"Especificación {i + 1}: Debe seleccionar un color")
+                errors.append(f"Especificación {spec_index}: Debe seleccionar un color")
             elif spec.color_hex in colores_utilizados:
-                warnings.append(f"Especificación {i + 1}: Color duplicado")
+                warnings.append(f"Especificación {spec_index}: Color duplicado")
             else:
                 colores_utilizados.add(spec.color_hex)
 
             # Validar formato de color hex
             if spec.color_hex and not ProductValidator._is_valid_hex_color(spec.color_hex):
-                errors.append(f"Especificación {i + 1}: Formato de color inválido")
+                errors.append(f"Especificación {spec_index}: Formato de color inválido")
 
         # Validaciones generales
         if total_peso > 10000:

@@ -1,5 +1,5 @@
 """
-Componentes de pestañas para el formulario de productos
+Componentes de pestañas para el formulario de productos - CORREGIDO
 """
 import tkinter as tk
 from tkinter import ttk, scrolledtext, filedialog
@@ -9,6 +9,7 @@ from PIL import Image, ImageTk, ImageDraw
 from .modern_widgets import ModernWidgets
 from ..style.color_palette import ColorPalette
 from utils.file_utils import FileUtils
+from models.producto import ColorEspecificacion
 
 
 class BaseFormTab:
@@ -242,7 +243,7 @@ class BasicInfoTab(BaseFormTab):
 
 
 class ColorsTab(BaseFormTab):
-    """Pestaña de especificaciones de color"""
+    """Pestaña de especificaciones de color - CORREGIDA"""
 
     def __init__(self, parent, vars_dict, **kwargs):
         super().__init__(parent, vars_dict, **kwargs)
@@ -251,7 +252,7 @@ class ColorsTab(BaseFormTab):
         self.create_tab()
 
     def create_tab(self):
-        """Crear contenido de la pestaña"""
+        """Crear contenido de la pestaña - CORREGIDO"""
         # Contenido principal
         main_content = tk.Frame(self.parent, bg=self.colors['bg'])
         main_content.pack(fill=tk.BOTH, expand=True, padx=30, pady=20)
@@ -259,28 +260,49 @@ class ColorsTab(BaseFormTab):
         # Header con instrucciones
         self._create_instructions_card(main_content)
 
-        # Área de especificaciones
-        self._create_instructions_card(main_content)
+        # CORRECCIÓN: Llamar al método correcto para crear el área de especificaciones
+        self._create_specifications_area(main_content)
 
     def _create_instructions_card(self, parent):
         """Crear tarjeta de instrucciones"""
-        card, content = self.create_card(parent, "🎨 Especificaciones de Color por Pieza")
+        instructions_frame = tk.Frame(parent, bg=self.colors['accent'],
+                                      highlightbackground=self.colors['border'],
+                                      highlightthickness=1)
+        instructions_frame.pack(fill=tk.X, pady=(0, 20))
 
+        content = tk.Frame(instructions_frame, bg=self.colors['accent'])
+        content.pack(fill=tk.X, padx=20, pady=15)
+
+        # Título
+        tk.Label(content, text="🎨 Especificaciones de Color por Pieza",
+                 font=self.fonts['subheading'],
+                 bg=self.colors['accent'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 10))
+
+        # Instrucciones
         instructions = tk.Label(content,
                                 text="Define cada pieza del producto con su color y peso específico. Esto te ayudará a calcular el material exacto necesario.",
-                                font=self.fonts['body'], bg=self.colors['card'],
+                                font=self.fonts['body'], bg=self.colors['accent'],
                                 fg=self.colors['text_secondary'], wraplength=600, justify=tk.LEFT)
         instructions.pack(anchor=tk.W)
 
     def _create_specifications_area(self, parent):
-        """Crear área de especificaciones"""
+        """Crear área de especificaciones - CORREGIDO"""
         spec_card = tk.Frame(parent, bg=self.colors['card'],
                              highlightbackground=self.colors['border'],
                              highlightthickness=1)
         spec_card.pack(fill=tk.BOTH, expand=True)
 
+        # Header del área
+        header = tk.Frame(spec_card, bg=self.colors['card'])
+        header.pack(fill=tk.X, padx=20, pady=(15, 10))
+
+        tk.Label(header, text="📝 Piezas y Colores",
+                 font=self.fonts['subheading'],
+                 bg=self.colors['card'], fg=self.colors['text']).pack(anchor=tk.W)
+
         # Scroll container
-        canvas = tk.Canvas(spec_card, bg=self.colors['card'], highlightthickness=0)
+        canvas = tk.Canvas(spec_card, bg=self.colors['card'], height=300,
+                           highlightthickness=0)
         scrollbar = ttk.Scrollbar(spec_card, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=self.colors['card'])
 
@@ -296,18 +318,19 @@ class ColorsTab(BaseFormTab):
         self.colors_frame = tk.Frame(scrollable_frame, bg=self.colors['card'])
         self.colors_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
+        # Empaquetar canvas y scrollbar
+        canvas.pack(side="left", fill="both", expand=True, padx=20)
+        scrollbar.pack(side="right", fill="y", padx=(0, 20))
+
         # Botón para agregar especificación
-        btn_frame = tk.Frame(scrollable_frame, bg=self.colors['card'])
+        btn_frame = tk.Frame(spec_card, bg=self.colors['card'])
         btn_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
 
         add_btn = self.widgets.create_modern_button(btn_frame, "➕ Agregar Especificación de Color",
                                                     self.agregar_especificacion_color, 'primary')
         add_btn.pack(fill=tk.X)
 
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Agregar primera especificación
+        # Agregar primera especificación automáticamente
         self.agregar_especificacion_color()
 
     def agregar_especificacion_color(self):
@@ -326,13 +349,13 @@ class ColorsTab(BaseFormTab):
         self.color_specifications.append(color_widget)
 
     def eliminar_especificacion_color(self, index):
-        """Eliminar especificación de color"""
+        """Eliminar especificación de color - CORREGIDO"""
         if len(self.color_specifications) > 1:
             widget = self.color_specifications[index]
             widget.destroy()
             del self.color_specifications[index]
 
-            # Reindexar
+            # Reindexar widgets restantes
             for i, widget in enumerate(self.color_specifications):
                 widget.index = i
                 widget.update_title(f"Color {i + 1}")
@@ -478,7 +501,7 @@ class ConfigTab(BaseFormTab):
 
 
 class ColorSpecificationWidget(tk.Frame):
-    """Widget para especificación individual de color"""
+    """Widget para especificación individual de color - CORREGIDO"""
 
     def __init__(self, parent, index, on_delete=None, colors=None, fonts=None):
         super().__init__(parent, bg=colors['card'] if colors else '#FFFFFF')
@@ -583,15 +606,11 @@ class ColorSpecificationWidget(tk.Frame):
 
     def get_all_specifications(self):
         """Obtener todas las especificaciones como objetos"""
-        # ✅ IMPORT CORRECTO:
-        from models.producto import ColorEspecificacion
-
-        # ✅ PARÁMETROS CORRECTOS según models/producto.py:
         return [ColorEspecificacion(
             color_hex=self.vars['color_hex'].get(),
             nombre_color=self.vars['nombre_color'].get(),
-            piezas=[self.vars['nombre_pieza'].get()],  # ✅ Lista de piezas
+            piezas=[self.vars['nombre_pieza'].get()],  # Lista de piezas
             peso_color=self.vars['peso_color'].get(),
-            tiempo_adicional=0,  # ✅ Parámetro requerido
-            notas=""  # ✅ Parámetro requerido
+            tiempo_adicional=0,  # Parámetro requerido
+            notas=""  # Parámetro requerido
         )]

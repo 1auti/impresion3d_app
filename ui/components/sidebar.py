@@ -1,5 +1,5 @@
 """
-Componente Sidebar para la aplicación
+Componente Sidebar para la aplicación - CORREGIDO
 """
 import tkinter as tk
 from .modern_widgets import ModernWidgets
@@ -23,6 +23,10 @@ class SidebarComponent:
         self.btn_editar = None
         self.btn_ver = None
         self.btn_eliminar = None
+
+        # Referencias para estadísticas dinámicas
+        self.stats_labels = {}
+        self.color_filter_frame = None
 
         self.create_sidebar()
 
@@ -105,16 +109,25 @@ class SidebarComponent:
         filter_frame = tk.Frame(parent, bg=self.colors['card'])
         filter_frame.pack(fill=tk.X, pady=(0, 20))
 
-        tk.Label(filter_frame, text="🎨 Filtrar por color",
+        # Header con contador de filtros activos
+        header_frame = tk.Frame(filter_frame, bg=self.colors['card'])
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+
+        tk.Label(header_frame, text="🎨 Filtrar por color",
                 font=('Segoe UI', 12),
-                bg=self.colors['card'], fg=self.colors['text']).pack(anchor=tk.W, pady=(0, 10))
+                bg=self.colors['card'], fg=self.colors['text']).pack(side=tk.LEFT)
+
+        self.filter_count_label = tk.Label(header_frame, text="",
+                                          font=('Segoe UI', 9),
+                                          bg=self.colors['card'], fg=self.colors['primary'])
+        self.filter_count_label.pack(side=tk.RIGHT)
 
         # Frame que se actualizará dinámicamente con los colores
         self.color_filter_frame = tk.Frame(filter_frame, bg=self.colors['card'])
         self.color_filter_frame.pack(fill=tk.X)
 
     def _create_stats_section(self, parent):
-        """Crear sección de estadísticas rápidas"""
+        """Crear sección de estadísticas dinámicas"""
         stats_frame = tk.Frame(parent, bg=self.colors['card'])
         stats_frame.pack(fill=tk.X)
 
@@ -126,11 +139,37 @@ class SidebarComponent:
         stats_grid = tk.Frame(stats_frame, bg=self.colors['card'])
         stats_grid.pack(fill=tk.X)
 
-        # Stat cards
-        self.widgets.create_stat_card(stats_grid, "42", "Productos", self.colors['primary'], 0, 0)
-        self.widgets.create_stat_card(stats_grid, "156h", "Tiempo Total", self.colors['success'], 0, 1)
-        self.widgets.create_stat_card(stats_grid, "2.5kg", "Material", self.colors['warning'], 1, 0)
-        self.widgets.create_stat_card(stats_grid, "6", "Colores", self.colors['secondary'], 1, 1)
+        # Configurar grid para 2 columnas
+        stats_grid.grid_columnconfigure(0, weight=1)
+        stats_grid.grid_columnconfigure(1, weight=1)
+
+        # Crear stat cards dinámicos
+        self._create_dynamic_stat_card(stats_grid, "productos", "Productos", self.colors['primary'], 0, 0)
+        self._create_dynamic_stat_card(stats_grid, "tiempo", "Tiempo Total", self.colors['success'], 0, 1)
+        self._create_dynamic_stat_card(stats_grid, "material", "Material", self.colors['warning'], 1, 0)
+        self._create_dynamic_stat_card(stats_grid, "colores", "Colores", self.colors['secondary'], 1, 1)
+
+    def _create_dynamic_stat_card(self, parent, stat_key, label, color, row, col):
+        """Crear tarjeta de estadística dinámica"""
+        card = tk.Frame(parent, bg=color, highlightthickness=0)
+        card.grid(row=row, column=col, padx=5, pady=5, sticky='nsew')
+
+        # Contenido
+        content = tk.Frame(card, bg=color)
+        content.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+
+        # Valor (inicialmente 0)
+        value_label = tk.Label(content, text="0", font=('Segoe UI', 20, 'bold'),
+                              bg=color, fg='white')
+        value_label.pack()
+
+        # Label
+        label_widget = tk.Label(content, text=label, font=('Segoe UI', 8),
+                               bg=color, fg='white')
+        label_widget.pack()
+
+        # Guardar referencias
+        self.stats_labels[stat_key] = value_label
 
     def pack(self, **kwargs):
         """Empaquetar el sidebar"""
@@ -166,7 +205,7 @@ class SidebarComponent:
                         btn.config(bg=self.colors['card'])
 
     def update_color_filters(self, colores_disponibles):
-        """Actualizar filtros de color"""
+        """Actualizar filtros de color - CORREGIDO"""
         # Limpiar filtros anteriores
         for widget in self.color_filter_frame.winfo_children():
             widget.destroy()
@@ -186,14 +225,25 @@ class SidebarComponent:
                                     command=self._clear_filters)
                 clear_btn.pack(side=tk.LEFT, padx=5)
 
+        # Actualizar contador de filtros
+        self._update_filter_count()
+
     def _create_color_chip(self, color_info):
-        """Crear chip de color para filtro"""
+        """Crear chip de color para filtro - CORREGIDO"""
         chip_frame = tk.Frame(self.color_filter_frame, bg=self.colors['card'])
         chip_frame.pack(side=tk.LEFT, padx=3, pady=3)
 
+        # Estado activo/inactivo
+        is_active = color_info['color_hex'] in self.colores_filtrados
+        border_color = self.colors['primary'] if is_active else self.colors['border']
+
         # Color chip
         color_btn = tk.Button(chip_frame, text="", bg=color_info['color_hex'],
-                            width=4, height=2, bd=0, cursor='hand2',
+                            width=4, height=2, bd=2, relief='solid',
+                            highlightbackground=border_color,
+                            highlightcolor=border_color,
+                            highlightthickness=2 if is_active else 1,
+                            cursor='hand2',
                             command=lambda c=color_info['color_hex']: self._toggle_color_filter(c))
         color_btn.pack()
 
@@ -203,18 +253,56 @@ class SidebarComponent:
                        padx=4, pady=0)
         badge.place(relx=1, rely=0, anchor='ne')
 
-        # Marcar si está activo
-        if color_info['color_hex'] in self.colores_filtrados:
-            chip_frame.config(highlightthickness=2, highlightbackground=self.colors['primary'])
-
         # Tooltip
         self.widgets.create_tooltip(color_btn, color_info.get('nombre_color', color_info['color_hex']))
+
+    def update_stats(self, stats_data):
+        """Actualizar estadísticas dinámicamente"""
+        try:
+            # Actualizar productos
+            if 'productos' in self.stats_labels:
+                total = stats_data.get('total_productos', 0)
+                self.stats_labels['productos'].config(text=str(total))
+
+            # Actualizar tiempo total
+            if 'tiempo' in self.stats_labels:
+                tiempo_promedio = stats_data.get('tiempo_promedio_impresion', 0)
+                tiempo_str = f"{int(tiempo_promedio)}min" if tiempo_promedio else "0min"
+                self.stats_labels['tiempo'].config(text=tiempo_str)
+
+            # Actualizar material más usado
+            if 'material' in self.stats_labels:
+                materiales = stats_data.get('productos_por_material', {})
+                if materiales:
+                    material_principal = max(materiales.items(), key=lambda x: x[1])
+                    self.stats_labels['material'].config(text=material_principal[0])
+                else:
+                    self.stats_labels['material'].config(text="N/A")
+
+            # Actualizar colores únicos
+            if 'colores' in self.stats_labels:
+                total_colores = stats_data.get('total_colores', 0)
+                self.stats_labels['colores'].config(text=str(total_colores))
+
+        except Exception as e:
+            print(f"Error actualizando estadísticas: {e}")
+
+    def _update_filter_count(self):
+        """Actualizar contador de filtros activos"""
+        count = len(self.colores_filtrados)
+        if count > 0:
+            self.filter_count_label.config(text=f"({count} activos)")
+        else:
+            self.filter_count_label.config(text="")
 
     # Métodos de eventos (callbacks)
     def _on_search_change(self):
         """Manejar cambio en la búsqueda"""
         if 'on_search' in self.callbacks:
-            self.callbacks['on_search'](self.search_var.get())
+            search_term = self.search_var.get()
+            # No buscar el placeholder
+            if search_term != "Nombre, material, color...":
+                self.callbacks['on_search'](search_term)
 
     def _on_new_product(self):
         """Manejar nuevo producto"""
@@ -237,17 +325,41 @@ class SidebarComponent:
             self.callbacks['on_delete_product']()
 
     def _toggle_color_filter(self, color_hex):
-        """Alternar filtro de color"""
+        """Alternar filtro de color - CORREGIDO"""
         if color_hex in self.colores_filtrados:
             self.colores_filtrados.remove(color_hex)
         else:
             self.colores_filtrados.append(color_hex)
 
+        # Actualizar visual de los chips
+        self._refresh_color_chips()
+
+        # Notificar cambio
         if 'on_color_filter_change' in self.callbacks:
             self.callbacks['on_color_filter_change'](self.colores_filtrados)
+
+        # Actualizar contador
+        self._update_filter_count()
+
+    def _refresh_color_chips(self):
+        """Refrescar visual de los chips de color"""
+        for widget in self.color_filter_frame.winfo_children():
+            if isinstance(widget, tk.Frame):
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Button) and child.cget('bg').startswith('#'):
+                        color_hex = child.cget('bg')
+                        is_active = color_hex in self.colores_filtrados
+                        border_color = self.colors['primary'] if is_active else self.colors['border']
+                        child.config(
+                            highlightbackground=border_color,
+                            highlightthickness=2 if is_active else 1
+                        )
 
     def _clear_filters(self):
         """Limpiar todos los filtros de color"""
         self.colores_filtrados = []
+        self._refresh_color_chips()
+        self._update_filter_count()
+
         if 'on_color_filter_change' in self.callbacks:
             self.callbacks['on_color_filter_change'](self.colores_filtrados)

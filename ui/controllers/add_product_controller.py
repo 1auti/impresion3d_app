@@ -1,5 +1,5 @@
 """
-Controlador para la ventana de agregar productos
+Controlador para la ventana de agregar productos - CORREGIDO
 """
 import tkinter as tk
 from typing import Dict, Any, Optional, Callable
@@ -68,52 +68,77 @@ class AddProductController:
         return self.vars
 
     def validate_basic_fields(self) -> bool:
-        """Validar campos básicos"""
-        vars_dict = {name: var.get() for name, var in self.vars.items()}
-        result = self.validator.validate_basic_fields(vars_dict)
+        """Validar campos básicos - CORREGIDO para no mostrar errores al cambiar pestañas"""
+        try:
+            vars_dict = {name: var.get() for name, var in self.vars.items()}
+            result = self.validator.validate_basic_fields(vars_dict)
 
-        if not result.is_valid:
-            self._handle_validation_errors(result.errors, "Campos básicos")
-            return False
+            # Solo mostrar errores si realmente hay campos con contenido
+            nombre = vars_dict.get('nombre', '').strip()
+            if not nombre:
+                return True  # No validar si no hay nombre aún
 
-        if result.warnings:
-            self._handle_warnings(result.warnings)
+            if not result.is_valid:
+                # Solo mostrar errores críticos, no todos
+                critical_errors = [e for e in result.errors if 'requerido' not in e.lower()]
+                if critical_errors:
+                    self._handle_validation_errors(critical_errors, "Campos básicos")
+                return False
 
-        return True
+            if result.warnings:
+                self._handle_warnings(result.warnings)
+
+            return True
+        except Exception as e:
+            print(f"Error en validación básica: {e}")
+            return True  # No bloquear por errores de validación
 
     def validate_temperature_fields(self) -> bool:
         """Validar campos de temperatura"""
-        vars_dict = {name: var.get() for name, var in self.vars.items()}
-        result = self.validator.validate_temperature_fields(vars_dict)
+        try:
+            vars_dict = {name: var.get() for name, var in self.vars.items()}
+            result = self.validator.validate_temperature_fields(vars_dict)
 
-        if not result.is_valid:
-            self._handle_validation_errors(result.errors, "Configuración de temperatura")
-            return False
+            if not result.is_valid:
+                self._handle_validation_errors(result.errors, "Configuración de temperatura")
+                return False
 
-        if result.warnings:
-            self._handle_warnings(result.warnings)
+            if result.warnings:
+                self._handle_warnings(result.warnings)
 
-        return True
+            return True
+        except Exception as e:
+            print(f"Error en validación de temperatura: {e}")
+            return True
 
     def validate_color_specifications(self) -> bool:
         """Validar especificaciones de color"""
-        if not self.colors_tab:
-            return False
+        try:
+            if not self.colors_tab:
+                return False
 
-        color_specs = self.colors_tab.get_color_specifications()
-        result = self.validator.validate_color_specifications(color_specs)
+            color_specs = self.colors_tab.get_color_specifications()
 
-        if not result.is_valid:
-            self._handle_validation_errors(result.errors, "Especificaciones de color")
-            return False
+            # Si no hay especificaciones, no validar aún
+            if not color_specs:
+                return True
 
-        if result.warnings:
-            self._handle_warnings(result.warnings)
+            result = self.validator.validate_color_specifications(color_specs)
 
-        return True
+            if not result.is_valid:
+                self._handle_validation_errors(result.errors, "Especificaciones de color")
+                return False
+
+            if result.warnings:
+                self._handle_warnings(result.warnings)
+
+            return True
+        except Exception as e:
+            print(f"Error en validación de colores: {e}")
+            return True
 
     def validate_complete_form(self) -> bool:
-        """Validar formulario completo"""
+        """Validar formulario completo - Solo para guardar"""
         vars_dict = {name: var.get() for name, var in self.vars.items()}
 
         # Obtener datos de componentes
@@ -129,7 +154,12 @@ class AddProductController:
             return False
 
         if result.warnings:
-            self._handle_warnings(result.warnings)
+            # Para advertencias, preguntar si continuar
+            if self.on_warning:
+                warning_msg = "Se detectaron las siguientes advertencias:\n\n" + "\n".join(result.warnings)
+                warning_msg += "\n\n¿Desea continuar de todas formas?"
+                if not self.on_warning(warning_msg):
+                    return False
 
         return True
 
@@ -202,28 +232,29 @@ class AddProductController:
 
     def show_preview(self) -> Dict[str, Any]:
         """Obtener datos para vista previa"""
-        if not self.validate_basic_fields():
+        try:
+            vars_dict = {name: var.get() for name, var in self.vars.items()}
+            color_specs = self.colors_tab.get_color_specifications() if self.colors_tab else []
+            guide_text = self.config_tab.get_guide_text() if self.config_tab else ""
+            image_path = self.basic_tab.get_image_path() if self.basic_tab else None
+
+            peso_total = sum(spec.peso_color for spec in color_specs)
+
+            return {
+                'nombre': vars_dict['nombre'],
+                'descripcion': vars_dict['descripcion'],
+                'material': vars_dict['material'],
+                'peso_total': peso_total,
+                'tiempo_impresion': vars_dict['tiempo_impresion'],
+                'temperatura_extrusor': vars_dict['temperatura_extrusor'],
+                'temperatura_cama': vars_dict['temperatura_cama'],
+                'num_colores': len(color_specs),
+                'tiene_imagen': image_path is not None,
+                'tiene_guia': len(guide_text.strip()) > 0 if guide_text else False
+            }
+        except Exception as e:
+            print(f"Error en preview: {e}")
             return None
-
-        vars_dict = {name: var.get() for name, var in self.vars.items()}
-        color_specs = self.colors_tab.get_color_specifications() if self.colors_tab else []
-        guide_text = self.config_tab.get_guide_text() if self.config_tab else ""
-        image_path = self.basic_tab.get_image_path() if self.basic_tab else None
-
-        peso_total = sum(spec.peso_color for spec in color_specs)
-
-        return {
-            'nombre': vars_dict['nombre'],
-            'descripcion': vars_dict['descripcion'],
-            'material': vars_dict['material'],
-            'peso_total': peso_total,
-            'tiempo_impresion': vars_dict['tiempo_impresion'],
-            'temperatura_extrusor': vars_dict['temperatura_extrusor'],
-            'temperatura_cama': vars_dict['temperatura_cama'],
-            'num_colores': len(color_specs),
-            'tiene_imagen': image_path is not None,
-            'tiene_guia': len(guide_text.strip()) > 0 if guide_text else False
-        }
 
     def apply_material_preset(self, material: str) -> None:
         """Aplicar preset de material"""
@@ -274,21 +305,30 @@ class AddProductController:
 
     def get_form_progress(self) -> Dict[str, bool]:
         """Obtener progreso del formulario"""
-        vars_dict = {name: var.get() for name, var in self.vars.items()}
+        try:
+            vars_dict = {name: var.get() for name, var in self.vars.items()}
 
-        basic_complete = bool(vars_dict.get('nombre', '').strip())
-        colors_complete = bool(self.colors_tab and self.colors_tab.get_color_specifications())
-        config_complete = bool(
-            vars_dict.get('temperatura_extrusor', 0) > 0 and
-            vars_dict.get('temperatura_cama', 0) >= 0
-        )
+            basic_complete = bool(vars_dict.get('nombre', '').strip())
+            colors_complete = bool(self.colors_tab and self.colors_tab.get_color_specifications())
+            config_complete = bool(
+                vars_dict.get('temperatura_extrusor', 0) > 0 and
+                vars_dict.get('temperatura_cama', 0) >= 0
+            )
 
-        return {
-            'basic': basic_complete,
-            'colors': colors_complete,
-            'config': config_complete,
-            'overall': basic_complete and colors_complete and config_complete
-        }
+            return {
+                'basic': basic_complete,
+                'colors': colors_complete,
+                'config': config_complete,
+                'overall': basic_complete and colors_complete and config_complete
+            }
+        except Exception as e:
+            print(f"Error obteniendo progreso: {e}")
+            return {
+                'basic': False,
+                'colors': False,
+                'config': False,
+                'overall': False
+            }
 
     # Métodos de manejo de eventos
     def _handle_success(self, message: str):
@@ -304,13 +344,14 @@ class AddProductController:
     def _handle_warning(self, message: str):
         """Manejar evento de advertencia"""
         if self.on_warning:
-            self.on_warning(message)
+            return self.on_warning(message)
+        return True
 
     def _handle_warnings(self, warnings: list):
         """Manejar múltiples advertencias"""
         if warnings and self.on_warning:
             for warning in warnings:
-                self.on_warning(warning)
+                print(f"Advertencia: {warning}")  # Solo log, no mostrar popup
 
     def _handle_validation_errors(self, errors: list, context: str = ""):
         """Manejar errores de validación"""
@@ -321,46 +362,62 @@ class AddProductController:
     # Métodos de utilidad
     def is_form_dirty(self) -> bool:
         """Verificar si el formulario ha sido modificado"""
-        # Verificar si algún campo tiene valores no vacíos
-        for name, var in self.vars.items():
-            if name in ['temperatura_extrusor', 'temperatura_cama']:
-                # Estos tienen valores por defecto
-                continue
+        try:
+            # Verificar si algún campo tiene valores no vacíos
+            for name, var in self.vars.items():
+                if name in ['temperatura_extrusor', 'temperatura_cama']:
+                    # Estos tienen valores por defecto
+                    continue
 
-            if isinstance(var, tk.StringVar) and var.get().strip():
-                return True
-            elif isinstance(var, (tk.IntVar, tk.DoubleVar)) and var.get() > 0:
-                return True
+                if isinstance(var, tk.StringVar) and var.get().strip():
+                    return True
+                elif isinstance(var, (tk.IntVar, tk.DoubleVar)) and var.get() > 0:
+                    return True
 
-        # Verificar imagen
-        if self.basic_tab and self.basic_tab.get_image_path():
-            return True
-
-        # Verificar especificaciones de color
-        if self.colors_tab:
-            specs = self.colors_tab.get_color_specifications()
-            if any(spec.peso_color > 0 for spec in specs):
+            # Verificar imagen
+            if self.basic_tab and self.basic_tab.get_image_path():
                 return True
 
-        # Verificar guía
-        if self.config_tab:
-            guide = self.config_tab.get_guide_text()
-            if guide and guide.strip():
-                return True
+            # Verificar especificaciones de color
+            if self.colors_tab:
+                specs = self.colors_tab.get_color_specifications()
+                if any(spec.peso_color > 0 for spec in specs):
+                    return True
 
-        return False
+            # Verificar guía
+            if self.config_tab:
+                guide = self.config_tab.get_guide_text()
+                if guide and guide.strip():
+                    return True
+
+            return False
+        except Exception as e:
+            print(f"Error verificando si está dirty: {e}")
+            return False
 
     def get_summary(self) -> Dict[str, Any]:
         """Obtener resumen del producto para confirmación"""
-        vars_dict = {name: var.get() for name, var in self.vars.items()}
-        color_specs = self.colors_tab.get_color_specifications() if self.colors_tab else []
+        try:
+            vars_dict = {name: var.get() for name, var in self.vars.items()}
+            color_specs = self.colors_tab.get_color_specifications() if self.colors_tab else []
 
-        return {
-            'nombre': vars_dict.get('nombre', ''),
-            'material': vars_dict.get('material', ''),
-            'peso_total': sum(spec.peso_color for spec in color_specs),
-            'tiempo': vars_dict.get('tiempo_impresion', 0),
-            'num_piezas': len(color_specs),
-            'tiene_imagen': bool(self.basic_tab and self.basic_tab.get_image_path()),
-            'tiene_guia': bool(self.config_tab and self.config_tab.get_guide_text().strip())
-        }
+            return {
+                'nombre': vars_dict.get('nombre', ''),
+                'material': vars_dict.get('material', ''),
+                'peso_total': sum(spec.peso_color for spec in color_specs),
+                'tiempo': vars_dict.get('tiempo_impresion', 0),
+                'num_piezas': len(color_specs),
+                'tiene_imagen': bool(self.basic_tab and self.basic_tab.get_image_path()),
+                'tiene_guia': bool(self.config_tab and self.config_tab.get_guide_text().strip())
+            }
+        except Exception as e:
+            print(f"Error obteniendo resumen: {e}")
+            return {
+                'nombre': 'Error',
+                'material': 'N/A',
+                'peso_total': 0,
+                'tiempo': 0,
+                'num_piezas': 0,
+                'tiene_imagen': False,
+                'tiene_guia': False
+            }

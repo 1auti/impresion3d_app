@@ -1,11 +1,10 @@
 """
-Ventana principal modernizada y simplificada de la aplicación
+Ventana principal modernizada y simplificada de la aplicación - CORREGIDA
 """
 import tkinter as tk
 from tkinter import messagebox
 
 from .style import ModernStyle
-
 
 from .components import (
     HeaderComponent,
@@ -64,7 +63,7 @@ class ModernMainWindow:
 
         # Base de datos
         self.db_manager = DatabaseManager()
-
+        self.db_manager.init_database()  # Asegurar que la BD esté inicializada
 
         self.product_controller = ProductController(self.db_manager)
 
@@ -79,7 +78,7 @@ class ModernMainWindow:
         self.main_container = tk.Frame(self.root, bg=self.styles.colors['bg'])
         self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # ✅ Header (usando __init__.py)
+        # Header
         self.header = HeaderComponent(
             self.main_container,
             on_stats_click=self._show_statistics,
@@ -152,38 +151,59 @@ class ModernMainWindow:
 
     def _load_initial_data(self):
         """Cargar datos iniciales"""
-        success, message = self.product_controller.cargar_productos()
-        if success:
-            self._update_status(message)
-            self._update_color_filters()
-        else:
-            messagebox.showerror("Error", message)
+        try:
+            success, message = self.product_controller.cargar_productos()
+            if success:
+                self._update_status(message)
+                self._update_color_filters()
+                self._update_sidebar_stats()
+            else:
+                messagebox.showerror("Error", message)
+        except Exception as e:
+            messagebox.showerror("Error", f"Error al cargar datos: {str(e)}")
 
     # Métodos de eventos del controlador
     def _on_products_changed(self, productos_filtrados):
         """Manejar cambio en productos"""
-        self.product_list.update_product_list(productos_filtrados, self.sidebar.colores_filtrados)
-        self._update_status(f"✓ Mostrando {len(productos_filtrados)} productos")
+        try:
+            self.product_list.update_product_list(productos_filtrados, self.sidebar.colores_filtrados)
+            self._update_status(f"✓ Mostrando {len(productos_filtrados)} productos")
+            self._update_sidebar_stats()
+        except Exception as e:
+            print(f"Error actualizando lista de productos: {e}")
 
     def _on_selection_changed(self, producto_seleccionado):
         """Manejar cambio en selección"""
-        self.detail_panel.update_product_details(producto_seleccionado)
-        self.sidebar.enable_buttons(producto_seleccionado is not None)
+        try:
+            self.detail_panel.update_product_details(producto_seleccionado)
+            self.sidebar.enable_buttons(producto_seleccionado is not None)
+        except Exception as e:
+            print(f"Error actualizando selección: {e}")
 
     def _on_filters_changed(self, colores_filtrados):
         """Manejar cambio en filtros"""
-        self._update_color_filters()
+        try:
+            self._update_color_filters()
+            self._update_sidebar_stats()
+        except Exception as e:
+            print(f"Error actualizando filtros: {e}")
 
     # Métodos de eventos de la interfaz
     def _on_search(self, termino):
         """Manejar búsqueda"""
-        success, message = self.product_controller.buscar_productos(termino)
-        if not success:
-            self.notifications.show_notification(message, 'error')
+        try:
+            success, message = self.product_controller.buscar_productos(termino)
+            if not success:
+                self.notifications.show_notification(message, 'error')
+        except Exception as e:
+            self.notifications.show_notification(f"Error en búsqueda: {str(e)}", 'error')
 
     def _on_product_selection_change(self, producto_id):
         """Manejar cambio de selección en la lista"""
-        self.product_controller.seleccionar_producto(producto_id)
+        try:
+            self.product_controller.seleccionar_producto(producto_id)
+        except Exception as e:
+            print(f"Error seleccionando producto: {e}")
 
     def _on_product_double_click(self, producto_id):
         """Manejar doble clic en producto"""
@@ -191,97 +211,139 @@ class ModernMainWindow:
 
     def _on_color_filter_change(self, colores_filtrados):
         """Manejar cambio en filtros de color"""
-        self.product_controller.aplicar_filtro_colores(colores_filtrados)
+        try:
+            self.product_controller.aplicar_filtro_colores(colores_filtrados)
+        except Exception as e:
+            print(f"Error aplicando filtros: {e}")
 
     # Métodos de acciones
     def _new_product(self):
         """Crear nuevo producto"""
+        try:
+            ventana = ModernAddProductWindow(self.root, self.db_manager)
+            self.root.wait_window(ventana.window)
 
-        ventana = ModernAddProductWindow(self.root, self.db_manager)
-        self.root.wait_window(ventana.window)
-
-        if ventana.producto_creado:
-            self.product_controller.cargar_productos()
-            self.notifications.show_notification("✓ Producto creado exitosamente", 'success')
+            if ventana.producto_creado:
+                self.product_controller.cargar_productos()
+                self.notifications.show_notification("✓ Producto creado exitosamente", 'success')
+        except Exception as e:
+            self.notifications.show_notification(f"Error creando producto: {str(e)}", 'error')
 
     def _edit_product(self):
         """Editar producto seleccionado"""
-        producto = self.product_controller.get_producto_seleccionado()
-        if not producto:
-            return
+        try:
+            producto = self.product_controller.get_producto_seleccionado()
+            if not producto:
+                self.notifications.show_notification("Seleccione un producto para editar", 'warning')
+                return
 
+            ventana = ModernEditProductWindowRefactored(self.root, self.db_manager, producto)
+            self.root.wait_window(ventana.window)
 
-        ventana = ModernEditProductWindowRefactored(self.root, self.db_manager, producto)
-        self.root.wait_window(ventana.window)
-
-        if ventana.producto_actualizado:
-            self.product_controller.cargar_productos()
-            self.notifications.show_notification("✓ Producto actualizado", 'success')
+            if ventana.producto_actualizado:
+                self.product_controller.cargar_productos()
+                self.notifications.show_notification("✓ Producto actualizado", 'success')
+        except Exception as e:
+            self.notifications.show_notification(f"Error editando producto: {str(e)}", 'error')
 
     def _view_details(self):
         """Ver detalles del producto"""
-        producto = self.product_controller.get_producto_seleccionado()
-        if not producto:
-            return
+        try:
+            producto = self.product_controller.get_producto_seleccionado()
+            if not producto:
+                self.notifications.show_notification("Seleccione un producto para ver detalles", 'warning')
+                return
 
-
-        ventana = ModernProductDetailWindow(self.root, producto)
-        self.root.wait_window(ventana.window)
+            ventana = ModernProductDetailWindow(self.root, producto)
+            self.root.wait_window(ventana.window)
+        except Exception as e:
+            self.notifications.show_notification(f"Error mostrando detalles: {str(e)}", 'error')
 
     def _delete_product(self):
         """Eliminar producto"""
-        producto = self.product_controller.get_producto_seleccionado()
-        if not producto:
-            return
+        try:
+            producto = self.product_controller.get_producto_seleccionado()
+            if not producto:
+                self.notifications.show_notification("Seleccione un producto para eliminar", 'warning')
+                return
 
-        if self.dialogs.show_delete_confirmation(producto.nombre):
-            success, message = self.product_controller.eliminar_producto(producto)
-            if success:
-                self.notifications.show_notification("✓ Producto eliminado", 'success')
-            else:
-                self.notifications.show_notification(f"✕ {message}", 'error')
+            if self.dialogs.show_delete_confirmation(producto.nombre):
+                success, message = self.product_controller.eliminar_producto(producto)
+                if success:
+                    self.notifications.show_notification("✓ Producto eliminado", 'success')
+                else:
+                    self.notifications.show_notification(f"✕ {message}", 'error')
+        except Exception as e:
+            self.notifications.show_notification(f"Error eliminando producto: {str(e)}", 'error')
 
     def _show_statistics(self):
         """Mostrar estadísticas"""
-        stats = self.product_controller.obtener_estadisticas()
-        self.dialogs.show_statistics_dialog(stats)
+        try:
+            stats = self.product_controller.obtener_estadisticas()
+            self.dialogs.show_statistics_dialog(stats)
+        except Exception as e:
+            self.notifications.show_notification(f"Error mostrando estadísticas: {str(e)}", 'error')
 
     def _export_data(self):
         """Exportar datos"""
-        productos = self.product_controller.exportar_productos()
-        success, message = self.dialogs.show_export_dialog(productos)
+        try:
+            productos = self.product_controller.exportar_productos()
+            success, message = self.dialogs.show_export_dialog(productos)
 
-        if success:
-            self.notifications.show_notification("✓ " + message, 'success')
-        elif message != "Exportación cancelada":
-            self.notifications.show_notification("✕ " + message, 'error')
+            if success:
+                self.notifications.show_notification("✓ " + message, 'success')
+            elif message != "Exportación cancelada":
+                self.notifications.show_notification("✕ " + message, 'error')
+        except Exception as e:
+            self.notifications.show_notification(f"Error exportando: {str(e)}", 'error')
 
     # Métodos de utilidad
     def _update_color_filters(self):
         """Actualizar filtros de color"""
-        colores_disponibles = self.product_controller.obtener_colores_disponibles()
-        self.sidebar.update_color_filters(colores_disponibles)
+        try:
+            colores_disponibles = self.product_controller.obtener_colores_disponibles()
+            self.sidebar.update_color_filters(colores_disponibles)
+        except Exception as e:
+            print(f"Error actualizando filtros de color: {e}")
+
+    def _update_sidebar_stats(self):
+        """Actualizar estadísticas del sidebar"""
+        try:
+            stats = self.product_controller.obtener_estadisticas()
+            self.sidebar.update_stats(stats)
+        except Exception as e:
+            print(f"Error actualizando estadísticas del sidebar: {e}")
 
     def _update_status(self, mensaje):
         """Actualizar barra de estado"""
-        self.status_label.config(text=mensaje)
+        try:
+            self.status_label.config(text=mensaje)
 
-        # Mostrar fecha y hora
-        from datetime import datetime
-        self.status_info.config(text=datetime.now().strftime("%d/%m/%Y %H:%M"))
+            # Mostrar fecha y hora
+            from datetime import datetime
+            self.status_info.config(text=datetime.now().strftime("%d/%m/%Y %H:%M"))
+        except Exception as e:
+            print(f"Error actualizando status: {e}")
 
     def _center_window(self):
         """Centrar ventana en pantalla"""
-        self.root.update_idletasks()
-        width = self.root.winfo_width()
-        height = self.root.winfo_height()
-        x = (self.root.winfo_screenwidth() // 2) - (width // 2)
-        y = (self.root.winfo_screenheight() // 2) - (height // 2) - 40
-        self.root.geometry(f'{width}x{height}+{x}+{y}')
+        try:
+            self.root.update_idletasks()
+            width = self.root.winfo_width()
+            height = self.root.winfo_height()
+            x = (self.root.winfo_screenwidth() // 2) - (width // 2)
+            y = (self.root.winfo_screenheight() // 2) - (height // 2) - 40
+            self.root.geometry(f'{width}x{height}+{x}+{y}')
+        except Exception as e:
+            print(f"Error centrando ventana: {e}")
 
     def _on_closing(self):
         """Manejar cierre de aplicación"""
-        if self.dialogs.show_exit_confirmation():
+        try:
+            if self.dialogs.show_exit_confirmation():
+                self.root.destroy()
+        except Exception as e:
+            print(f"Error cerrando aplicación: {e}")
             self.root.destroy()
 
 
