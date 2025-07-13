@@ -78,8 +78,8 @@ class ProductListComponent:
         column_config = {
             '#0': {'width': 0, 'stretch': False},
             'ID': {'width': 60, 'anchor': 'center', 'heading': 'ID'},
-            'Nombre': {'width': 300, 'heading': 'Nombre del Producto'},
-            'Colores': {'width': 200, 'heading': 'Colores'},
+            'Nombre': {'width': 300, 'anchor' : 'center', 'heading': 'Nombre del Producto'},
+            'Colores': {'width': 200, 'anchor' : 'center' , 'heading': 'Colores'},
             'Material': {'width': 100, 'anchor': 'center', 'heading': 'Material'},
             'Tiempo': {'width': 120, 'anchor': 'center', 'heading': 'Tiempo'},
             'Peso': {'width': 100, 'anchor': 'center', 'heading': 'Peso'}
